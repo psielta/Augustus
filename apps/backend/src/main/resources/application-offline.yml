@@ -1,0 +1,255 @@
+info:
+  app:
+    version: '@project.version@'
+
+application:
+  module: ${MODULE_NAME:api-regime-geral}
+  db:
+    filename: calculadora-pro.db
+  ibs:
+    enabled: true
+  memoriacalculo:
+    enabled: true
+
+spring:
+  application:
+    name: api-regime-geral
+  config:
+    activate:
+      on-profile: offline
+  datasource:
+    url: jdbc:sqlite:file:./calculadora/db/${application.db.filename}?mode=ro&date_class=TEXT&date_string_format=yyyy-MM-dd
+    username: sa
+    password:
+    driverClassName: org.sqlite.JDBC
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    defer-datasource-initialization: true
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        "[format_sql]": false
+  sql:
+    init:
+      mode: embedded
+  task:
+    execution:
+      pool:
+        max-size: 16
+        queue-capacity: 100
+        keep-alive: "10s"
+  devtools:
+    add-properties: false
+  jackson:
+    date-format: yyyy-MM-dd'T'HH:mm:ssXXX       # Formato de data/hora padrão (ISO 8601 com offset)
+    serialization:
+      write-dates-as-timestamps: false          # Escrever datas como strings ao invés de timestamps
+    deserialization:
+      adjust-dates-to-context-time-zone: false  # Ajustar datas para o timezone configurado
+      fail-on-unknown-properties: false         # Falhar se propriedade desconhecida for encontrada
+    property-naming-strategy: LOWER_CAMEL_CASE  # Estratégia de nomenclatura de propriedades
+    default-property-inclusion: NON_NULL
+  http:
+    codecs:
+      max-in-memory-size: 500KB
+
+logging:
+  level:
+    root: INFO
+    org:
+      springframework:
+        security: INFO
+        web:
+          filter: INFO
+        data:
+          jpa: INFO
+          jdbc: INFO
+      hibernate:
+        orm:
+          jdbc:
+            bind: INFO
+        SQL: INFO
+        type: INFO
+    com:
+      zaxxer:
+        hikari:
+          HikariConfig: INFO
+    br:
+      gov:
+        serpro:
+          rtc: INFO
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  tomcat:
+    threads:
+      max: 250
+  compression:
+    enabled: true
+    mime-types: application/json
+    min-response-size: 1024
+
+springdoc:
+  version: '@springdoc.version@'
+  api-docs:
+    path: /api-docs
+    version: openapi-3-1
+  swagger-ui:
+    layout: BaseLayout
+    display-request-duration: true
+    groups-order: DESC
+    operationsSorter: method
+    disable-swagger-default-url: true
+    use-root-path: true
+    supported-submit-methods: ["get", "post"]
+  show-actuator: false
+  cache:
+    disabled: true
+
+cache:
+  specs:
+    - name: AliquotaAdRemProdutoRepository.buscarAliquotaAdRem
+      expireAfterAccess: "P1D"
+      initialCapacity: 84_000 # 16MB
+      maximumSize: 84_000
+    - name: AliquotaAdValoremProdutoRepository.buscarAliquotaAdValorem
+      expireAfterAccess: "P1D"
+      initialCapacity: 84_000 # ~12.4 MB
+      maximumSize: 84_000
+    - name: AliquotaPadraoRepository.buscarAliquota
+      expireAfterAccess: "P1D"
+      initialCapacity: 50_000 # ~10MB
+      maximumSize: 50_000
+    - name: AliquotaReferenciaRepository.buscar
+      expireAfterAccess: "P1D"
+      initialCapacity: 100
+      maximumSize: 100
+    - name: ClassificacaoTributariaRepository.buscarClassificacaoTributaria
+      expireAfterAccess: "P1D"
+      initialCapacity: 1_600 # ~400KB
+      maximumSize: 1_600
+    - name: ClassificacaoTributariaRepository.buscarClassificacaoTributariaCalculo
+      expireAfterAccess: "P1D"
+      initialCapacity: 200
+      maximumSize: 200
+    - name: FundamentacaoClassificacaoRepository.buscar
+      expireAfterAccess: "P1D"
+      initialCapacity: 400 # ~600KB
+      maximumSize: 400
+    - name: NbsAplicavelService.validarNbsAplicavel
+      expireAfterAccess: "P1D"
+      initialCapacity: 100_000 # ~13MB
+      maximumSize: 100_000
+    - name: NbsAplicavelRepository.temNbsAplicavel # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< remover?
+      expireAfterAccess: "P1D"
+      initialCapacity: 10_000 # ~1.3MB
+      maximumSize: 10_000
+    - name: NbsAplicavelRepository.temExcecaoNbsAplicavel # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< remover?
+      expireAfterAccess: "P1D"
+      initialCapacity: 10_000 # ~1.3MB
+      maximumSize: 10_000
+    - name: NbsAplicavelRepository.temNbsAplicavelSemExcecao # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< remover?
+      expireAfterAccess: "P1D"
+      initialCapacity: 10_000 # ~1.3MB
+      maximumSize: 10_000
+    - name: NbsAplicavelRepository.tem # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< remover?
+      expireAfterAccess: "P1D"
+      initialCapacity: 400 # ~45KB
+      maximumSize: 400
+    - name: NbsRepository.existeNbs
+      expireAfterAccess: "P1D"
+      initialCapacity: 1_800 # ~220KB
+      maximumSize: 1_800
+    - name: NcmAplicavelService.validarNcmAplicavel
+      expireAfterAccess: "P1D"
+      initialCapacity: 100_000 # ~13MB
+      maximumSize: 100_000
+    - name: NcmAplicavelRepository.temNcmAplicavel # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< remover?
+      expireAfterAccess: "P1D"
+      initialCapacity: 10_000 # ~1.3MB
+      maximumSize: 10_000
+    - name: NcmAplicavelRepository.temExcecaoNcmAplicavel # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< remover?
+      expireAfterAccess: "P1D"
+      initialCapacity: 10_000 # ~1.3MB
+      maximumSize: 10_000
+    - name: NcmAplicavelRepository.temNcmAplicavelSemExcecao # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< remover?
+      expireAfterAccess: "P1D"
+      initialCapacity: 10_000 # ~1.3MB
+      maximumSize: 10_000
+    - name: NcmAplicavelRepository.tem # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< remover?
+      expireAfterAccess: "P1D"
+      initialCapacity: 400 # ~45KB
+      maximumSize: 400
+    - name: NcmRepository.existeNcm
+      expireAfterAccess: "P1D"
+      initialCapacity: 21_000 # ~2.5MB
+      maximumSize: 21_000
+    - name: PercentualReducaoRepository.buscar
+      expireAfterAccess: "P1D"
+      initialCapacity: 1_600 # ~216KB
+      maximumSize: 1_600
+    - name: TipoDfeClassificacaoRepository.buscar
+      expireAfterAccess: "P1D"
+      initialCapacity: 50
+      maximumSize: 50
+    - name: SituacaoTributariaRepository.existeCst
+      expireAfterAccess: "P1D"
+      initialCapacity: 240 # ~30KB
+      maximumSize: 240
+    - name: TratamentoClassificacaoRepository.buscarTratamentoClassificacao
+      expireAfterAccess: "P1D"
+      initialCapacity: 400 # ~50KB
+      maximumSize: 400
+    - name: TratamentoTributarioService.buscar
+      expireAfterAccess: "P1D"
+      initialCapacity: 50 # ~90KB
+      maximumSize: 50
+    - name: UfRepository.consultarPorSigla
+      expireAfterAccess: "P30D"
+      initialCapacity: 50 # ~5KB
+      maximumSize: 50
+    - name: UfRepository.existeUf
+      expireAfterAccess: "P30D"
+      initialCapacity: 50 # ~5KB
+      maximumSize: 50
+    - name: TemplateTokenizerService.tokenize
+      expireAfterAccess: "P30D"
+      initialCapacity: 100
+      maximumSize: 100
+    - name: TokenCacheService.get
+      expireAfterAccess: "P30D"
+      initialCapacity: 100
+      maximumSize: 100
+    - name: VersaoBaseDadosService.getUltimaVersao
+      expireAfterAccess: "P30D"
+      initialCapacity: 1
+      maximumSize: 1
+    - name: TipoDfeClassificacaoService.buscar
+      expireAfterAccess: "P1D"
+      initialCapacity: 50
+      maximumSize: 50
+    - name: TratamentoClassificacaoRepository.consultarValidadeDfeClassificacaoTributaria
+      expireAfterAccess: "P1D"
+      initialCapacity: 50
+      maximumSize: 50
+    - name: XmlUtil.getSchema
+      expireAfterAccess: "P30D"
+      initialCapacity: 30
+      maximumSize: 30
+
+management:
+  server:
+    port: 9101
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus
+      base-path: "/"
+      path-mapping:
+        prometheus: "metrics"
+
+versao:
+  url: ${VERSAO_OFFLINE_URL:https://piloto-cbs.tributos.gov.br/servico/calculadora-consumo/api/calculadora/dados-abertos/versao}

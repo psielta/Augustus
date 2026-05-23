@@ -1,0 +1,19 @@
+{
+    "properties": [
+        {
+            "name": "application.module",
+            "type": "java.lang.String",
+            "description": "Nome do módulo"
+        },
+        {
+            "name": "versao.url",
+            "type": "java.lang.String",
+            "description": "URL para verificação de versão na calculadora offline"
+        },
+        {
+            "name": "application.db.filename",
+            "type": "java.lang.String",
+            "description": "nome do arquivo do banco de dados"
+        }
+    ]
+}

@@ -1,0 +1,55 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Java / Maven
+target/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+coverage/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+
+# Gradle / Android local files
+.gradle/
+local.properties
+
+# Apple local files
+Pods/
+DerivedData/
