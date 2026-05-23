@@ -99,9 +99,12 @@ Stack real:
 - Spring Boot 3.5.7
 - Spring Web MVC e WebFlux
 - Spring Validation / Jakarta Bean Validation
+- Spring Security 6.x
+- Spring Mail
 - Spring Data JPA
 - SQLite com Hibernate Community Dialects
-- Flyway Maven Plugin
+- Flyway Maven Plugin e Flyway runtime no profile `testes`
+- JJWT 0.12.6
 - Spring Cache + Caffeine
 - Spring Retry
 - springdoc-openapi 2.8.9 / Swagger UI
@@ -116,8 +119,6 @@ Stack real:
 Nao existe no backend atual:
 
 - PostgreSQL
-- JWT
-- Spring Security como autenticacao de negocio
 - H2
 - Testcontainers
 - Spotless
@@ -140,6 +141,7 @@ Runtime:
 - OpenAPI JSON: `http://localhost:8080/api/api-docs`
 - Health: `http://localhost:9101/health`
 - Prometheus: `http://localhost:9101/metrics`
+- Banco de testes: `./target/test-db/calculadora-test.db`, recriado por `.\mvnw.cmd clean test`
 
 Endpoints principais:
 
@@ -155,6 +157,14 @@ Endpoints principais:
 - `GET /api/calculadora/dados-abertos/...`
 - `GET /api/calculadora/dados-abertos/versao`
 - `GET /api/versao/status`, somente no perfil `offline`
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `POST /api/auth/verify-email`
+- `GET /api/auth/verify-email?token=...`
+- `POST /api/auth/resend-verification`
 
 Padroes:
 
@@ -169,8 +179,40 @@ Testes:
 
 - Unitarios com JUnit 5, AssertJ e Mockito.
 - Integracao com `@SpringBootTest`, `@AutoConfigureMockMvc`, `MockMvc` e `application-testes.yml`.
-- Banco de testes tambem e SQLite.
+- Banco de testes tambem e SQLite, isolado em `./target/test-db`.
+- `.\mvnw.cmd clean test` recria o banco de teste do zero e aplica Flyway automaticamente.
 - Nao converter para H2/Testcontainers sem decisao explicita.
+
+### Autenticacao Augustus
+
+Implementada no backend em `apps/backend` pela migration `V0030__augustus_autenticacao_usuarios.sql`.
+
+Tabelas reais: `usuario`, `usuario_credencial`, `sessao_usuario`, `token_usuario`, `login_auditoria`.
+
+Regras:
+
+- Senha sempre BCrypt.
+- Access token e JWT HS256 com `sub` do usuario e `sid` da sessao.
+- Refresh token e opaco, rotativo e salvo apenas como SHA-256 hex.
+- Token de verificacao de email e salvo apenas como SHA-256 hex.
+- Login exige email verificado e retorna 403 `EMAIL_NAO_VERIFICADO` antes disso.
+- `POST /auth/verify-email` retorna 204; `GET /auth/verify-email?token=...` retorna `text/plain` para link clicavel.
+- `POST /auth/resend-verification` sempre retorna 204 e nao vaza existencia de email.
+- `POST /auth/logout` revoga apenas a sessao corrente do `sid`.
+- Reset de senha ainda nao existe.
+
+Segredos e SMTP:
+
+- `apps/backend/.env.example` e comitavel.
+- `apps/backend/.env` e git-ignored e carregado no profile `offline`.
+- Nunca commitar `.env` real.
+- `AUGUSTUS_JWT_SECRET` e obrigatorio em `offline`, com pelo menos 32 caracteres.
+- SMTP Gmail usa `AUGUSTUS_MAIL_HOST`, `AUGUSTUS_MAIL_PORT`, `AUGUSTUS_MAIL_USERNAME`, `AUGUSTUS_MAIL_PASSWORD`, `AUGUSTUS_MAIL_FROM`.
+- `AUGUSTUS_MAIL_PASSWORD` deve ser Gmail App Password de `https://myaccount.google.com/apppasswords`, nao senha normal.
+- Nunca logar `AUGUSTUS_MAIL_PASSWORD` nem token de verificacao plain.
+- `EmailService` e a abstracao; nao injetar `JavaMailSender` fora de `SmtpEmailService`.
+- Nunca expor `senha_hash`, `refresh_token_hash`, `token_hash` ou qualquer `*_hash` em DTOs/respostas.
+- Enums de auth usam `@Enumerated(EnumType.STRING)`.
 
 ## Blueprint do Banco Augustus
 
@@ -394,13 +436,15 @@ features/<feature>/
 
 ## O que nao fazer
 
-- Nao tratar JWT ou PostgreSQL como stack atual.
+- Nao tratar PostgreSQL como stack atual.
 - Nao tratar Angular/GovBR-DS como tecnologia do backend.
 - Nao tratar Flutter como tecnologia do backend ou do frontend web.
 - Nao implementar dark mode ou alternancia de tema no web/mobile.
 - Nao trocar SQLite por outro banco sem alterar configuracao, migracoes e testes.
 - Nao impor records no backend; o padrao atual usa classes com Lombok.
-- Nao assumir autenticacao Spring Security/JWT porque existe log de `security` ou exclusao de autoconfiguracao.
+- Nao expor hashes, tokens plain ou senha SMTP em respostas, logs ou DTOs.
+- Nao injetar `JavaMailSender` fora de `SmtpEmailService`.
+- Nao commitar `.env` real; somente `.env.example`.
 - Nao remover XSDs/modelos XML sem entender endpoints `/calculadora/xml`.
 - Nao alterar comportamento tributario original sem plano de migracao para o dominio financeiro.
 - Nao mover o blueprint de banco de `docs/database/blueprints` para Flyway como uma migration unica sem plano incremental.

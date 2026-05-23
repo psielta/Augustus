@@ -21,9 +21,17 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import br.gov.serpro.rtc.domain.service.exception.CampoInvalidoException;
 import br.gov.serpro.rtc.domain.service.exception.CaptchaException;
+import br.gov.serpro.rtc.domain.service.exception.CredenciaisInvalidasException;
+import br.gov.serpro.rtc.domain.service.exception.EmailJaCadastradoException;
+import br.gov.serpro.rtc.domain.service.exception.EmailNaoVerificadoException;
+import br.gov.serpro.rtc.domain.service.exception.EnvioEmailFalhouException;
 import br.gov.serpro.rtc.domain.service.exception.EntidadeNaoEncontradaException;
 import br.gov.serpro.rtc.domain.service.exception.ErroInternoSistemaException;
 import br.gov.serpro.rtc.domain.service.exception.EstruturaInconsistenteException;
+import br.gov.serpro.rtc.domain.service.exception.NaoAutenticadoException;
+import br.gov.serpro.rtc.domain.service.exception.RefreshTokenInvalidoException;
+import br.gov.serpro.rtc.domain.service.exception.TokenVerificacaoInvalidoException;
+import br.gov.serpro.rtc.domain.service.exception.UsuarioBloqueadoException;
 import br.gov.serpro.rtc.domain.service.exception.ValidacaoException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -108,6 +116,62 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleEntidadeNaoEncontradaException(EntidadeNaoEncontradaException ex,
             WebRequest request) {
         HttpStatus status = HttpStatus.NOT_FOUND;
+        ProblemDetail problemDetail = createProblem(ex, status);
+        return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(EmailJaCadastradoException.class)
+    public ResponseEntity<Object> handleEmailJaCadastradoException(EmailJaCadastradoException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.CONFLICT;
+        ProblemDetail problemDetail = createProblem(ex, status);
+        return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(EmailNaoVerificadoException.class)
+    public ResponseEntity<Object> handleEmailNaoVerificadoException(EmailNaoVerificadoException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.FORBIDDEN;
+        ProblemDetail problemDetail = createProblem(ex, status);
+        return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<Object> handleCredenciaisInvalidasException(CredenciaisInvalidasException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+        ProblemDetail problemDetail = createProblem(ex, status);
+        return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(UsuarioBloqueadoException.class)
+    public ResponseEntity<Object> handleUsuarioBloqueadoException(UsuarioBloqueadoException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.LOCKED;
+        ProblemDetail problemDetail = createProblem(ex, status);
+        return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(RefreshTokenInvalidoException.class)
+    public ResponseEntity<Object> handleRefreshTokenInvalidoException(RefreshTokenInvalidoException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+        ProblemDetail problemDetail = createProblem(ex, status);
+        return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(TokenVerificacaoInvalidoException.class)
+    public ResponseEntity<Object> handleTokenVerificacaoInvalidoException(TokenVerificacaoInvalidoException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ProblemDetail problemDetail = createProblem(ex, status);
+        return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(NaoAutenticadoException.class)
+    public ResponseEntity<Object> handleNaoAutenticadoException(NaoAutenticadoException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+        ProblemDetail problemDetail = createProblem(ex, status);
+        return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(EnvioEmailFalhouException.class)
+    public ResponseEntity<Object> handleEnvioEmailFalhouException(EnvioEmailFalhouException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.BAD_GATEWAY;
         ProblemDetail problemDetail = createProblem(ex, status);
         return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);
     }
