@@ -28,7 +28,7 @@ Aplicacoes presentes no snapshot atual:
 - `apps/web` — Frontend Angular 19 inicializado a partir do quickstart oficial GovBR-DS Web Components (`https://gitlab.com/govbr-ds/bibliotecas/wbc/govbr-ds-wbc-quickstart-angular`). Ver secao [Frontend Web](#frontend-web-appsweb).
 - `apps/mobile` - Aplicativo Flutter clonado do template Flutter Riverpod Clean Architecture (`https://github.com/ssoad/flutter_riverpod_clean_architecture`). Ver secao [Mobile](#mobile-appsmobile).
 
-As pastas `packages/shared`, `docker` e `docs` continuam vazias ou sem manifests de tecnologia no snapshot atual. Nao assumir Docker Compose, PostgreSQL, JWT, Node fora de `apps/web` ou qualquer outra stack ate que ela exista no repositorio.
+As pastas `packages/shared` e `docker` continuam vazias ou sem manifests de tecnologia no snapshot atual. A pasta `docs` contem documentacao, assets de marca e blueprints de banco, mas nada ali e executado automaticamente pela aplicacao. Nao assumir Docker Compose, PostgreSQL, JWT, Node fora de `apps/web` ou qualquer outra stack ate que ela exista no repositorio.
 
 ## Fonte de verdade (backend)
 
@@ -187,6 +187,20 @@ Todos ficam sob o context path `/api`.
 - Os scripts estao em `apps/backend/flyway/sql`.
 - Nao alterar migrations antigas sem uma razao explicita. Prefira criar nova migration quando evoluir o schema.
 - A configuracao JPA usa `open-in-view: false`.
+
+### Blueprint do banco Augustus
+
+Existe um blueprint documental da estrutura alvo multiusuario em:
+
+- `docs/database/blueprints/2026-05-23-augustus-multiusuario/V20260523_01__create_augustus_multiusuario_schema.sql`
+- `docs/database/blueprints/2026-05-23-augustus-multiusuario/insert_default_categories_for_user.sql`
+- `docs/database/blueprints/2026-05-23-augustus-multiusuario/README.md`
+
+Esses arquivos sao referencia, nao migration ativa. Eles ficam fora de `apps/backend/flyway/sql` de proposito para evitar execucao acidental.
+
+O blueprint descreve o banco alvo do Augustus: usuario/autenticacao, categorias por usuario, templates de categoria, contas, cartoes, faturas, orcamentos, importacoes, recorrencias, parcelamentos, lancamentos, anexos e views de resumo.
+
+Ao implementar o dominio financeiro, quebrar o blueprint em migrations menores e incrementais, sempre acompanhadas de codigo backend e testes do recorte entregue. Ordem sugerida: autenticacao/usuarios; categorias; contas/cartoes/faturas; orcamentos/importacoes/recorrencias/parcelamentos; lancamentos/anexos/views.
 
 ## Testes do backend
 
@@ -481,6 +495,7 @@ Padrao predominante:
 
 - Preserve o backend original enquanto a migracao de dominio nao for planejada.
 - Ao adicionar funcionalidades de financas pessoais no backend, siga a arquitetura existente: controller, service, repository, model e tratamento central de erro.
+- Use o blueprint em `docs/database/blueprints/2026-05-23-augustus-multiusuario` como mapa de chegada, nao como migration unica a ser aplicada de uma vez.
 - Se introduzir autenticacao, PostgreSQL, Docker ou outra stack nova, primeiro adicione manifests/configuracoes reais e depois atualize este arquivo e o `README.md`. O frontend Angular ja foi adicionado em `apps/web` e o mobile Flutter foi adicionado em `apps/mobile`.
 - Nao declarar tecnologias em documentacao antes de elas existirem no codigo.
 - Ao criar novos modelos no backend, siga o estilo local com Lombok e classes Java, a menos que o projeto decida migrar padrao.
@@ -499,6 +514,7 @@ Padrao predominante:
 - Nao assumir security/JWT porque existe referencia a `security` em logging ou exclusao de autoconfiguracao.
 - Nao remover XSDs/modelos XML sem entender os endpoints `/calculadora/xml`.
 - Nao alterar comportamento tributario original enquanto ele ainda for usado como base de referencia.
+- Nao mover o blueprint de banco de `docs/database/blueprints` para Flyway como uma migration unica sem plano incremental.
 - Nao introduzir `NgModule` em `apps/web` — o quickstart adotou standalone components e essa direcao deve ser preservada.
 - Nao substituir os Web Components do GovBR-DS por outra biblioteca de UI (Material, PrimeNG, Tailwind UI, etc.) sem decisao explicita — o design system foi a razao de escolher esse quickstart.
 - Nao remover os links de CDN (Rawline, Raleway, Font Awesome) de `apps/web/src/index.html` sem prover substituto: o CSS do `@govbr-ds/core` depende desses recursos para renderizar corretamente.

@@ -20,7 +20,7 @@ Aplicacoes atuais:
 - `apps/web`: frontend Angular 19 inicializado do quickstart GovBR-DS Web Components.
 - `apps/mobile`: app Flutter clonado do template Flutter Riverpod Clean Architecture.
 
-Ainda sem stack propria configurada: `packages/shared`, `docker` e `docs`.
+Ainda sem stack propria configurada: `packages/shared` e `docker`. A pasta `docs` contem documentacao, assets de marca e blueprints de banco; nada em `docs` e executado automaticamente.
 
 ## Regras gerais para Codex
 
@@ -61,6 +61,12 @@ Backend:
 - `apps/backend/src/test/resources/application-testes.yml`
 - `apps/backend/flyway/flyway-pro.conf`
 - `apps/backend/flyway/flyway-nonpro.conf`
+
+Blueprint documental do banco alvo:
+
+- `docs/database/blueprints/2026-05-23-augustus-multiusuario/README.md`
+- `docs/database/blueprints/2026-05-23-augustus-multiusuario/V20260523_01__create_augustus_multiusuario_schema.sql`
+- `docs/database/blueprints/2026-05-23-augustus-multiusuario/insert_default_categories_for_user.sql`
 
 Frontend:
 
@@ -165,6 +171,23 @@ Testes:
 - Integracao com `@SpringBootTest`, `@AutoConfigureMockMvc`, `MockMvc` e `application-testes.yml`.
 - Banco de testes tambem e SQLite.
 - Nao converter para H2/Testcontainers sem decisao explicita.
+
+## Blueprint do Banco Augustus
+
+O schema alvo multiusuario esta guardado em `docs/database/blueprints/2026-05-23-augustus-multiusuario`.
+
+Trate esses SQLs como documentacao de arquitetura, nao como migrations ativas. Eles nao estao em `apps/backend/flyway/sql` de proposito.
+
+Resumo do blueprint:
+
+- Usuarios/autenticacao: `usuario`, `usuario_credencial`, `sessao_usuario`, `token_usuario`, `login_auditoria`.
+- Categorias: `categoria_template` e `categoria`, sempre por usuario.
+- Financeiro: contas, cartoes, faturas, orcamentos, importacoes, recorrencias, parcelamentos, lancamentos e anexos.
+- Views de resumo para lancamentos, resumo mensal, despesas por categoria, despesas por cartao e top despesas.
+
+Ao evoluir o backend, quebrar esse blueprint em migrations menores e incrementais. Cada recorte deve ter migration real, entidades/modelos, repositories, services, controllers/OpenAPI quando houver endpoint, e testes.
+
+Ordem recomendada: autenticacao/usuarios; categorias; contas/cartoes/faturas; orcamentos/importacoes/recorrencias/parcelamentos; lancamentos/anexos/views.
 
 ## Frontend Web
 
@@ -380,6 +403,7 @@ features/<feature>/
 - Nao assumir autenticacao Spring Security/JWT porque existe log de `security` ou exclusao de autoconfiguracao.
 - Nao remover XSDs/modelos XML sem entender endpoints `/calculadora/xml`.
 - Nao alterar comportamento tributario original sem plano de migracao para o dominio financeiro.
+- Nao mover o blueprint de banco de `docs/database/blueprints` para Flyway como uma migration unica sem plano incremental.
 - Nao introduzir `NgModule` em `apps/web`.
 - Nao substituir GovBR-DS por outra biblioteca visual sem decisao explicita.
 - Nao remover CDNs de Rawline/Raleway/Font Awesome em `apps/web/src/index.html` sem substituto.

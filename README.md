@@ -28,7 +28,7 @@ Aplicacoes presentes no snapshot atual:
 - `apps/web` — Frontend Angular 19 inicializado a partir do quickstart oficial GovBR-DS Web Components (https://gitlab.com/govbr-ds/bibliotecas/wbc/govbr-ds-wbc-quickstart-angular).
 - `apps/mobile` - Aplicativo Flutter clonado do template Flutter Riverpod Clean Architecture (https://github.com/ssoad/flutter_riverpod_clean_architecture).
 
-As pastas `packages/shared`, `docker` e `docs` continuam como estrutura inicial e ainda nao possuem stack configurada no codigo atual.
+As pastas `packages/shared` e `docker` continuam como estrutura inicial e ainda nao possuem stack configurada no codigo atual. A pasta `docs` contem documentacao, assets de marca e blueprints de banco, mas nada ali e executado automaticamente pela aplicacao.
 
 ## Backend
 
@@ -78,6 +78,26 @@ Configs Flyway presentes:
 
 - `apps/backend/flyway/flyway-pro.conf`
 - `apps/backend/flyway/flyway-nonpro.conf`
+
+### Blueprint do banco Augustus
+
+A estrutura alvo do banco de dados do produto esta armazenada como referencia em:
+
+- `docs/database/blueprints/2026-05-23-augustus-multiusuario/V20260523_01__create_augustus_multiusuario_schema.sql`
+- `docs/database/blueprints/2026-05-23-augustus-multiusuario/insert_default_categories_for_user.sql`
+- `docs/database/blueprints/2026-05-23-augustus-multiusuario/README.md`
+
+Esses arquivos nao sao migrations ativas. Eles nao estao em `apps/backend/flyway/sql` e nao devem ser executados automaticamente pelo backend atual.
+
+O blueprint descreve a estrutura padrao desejada para o Augustus multiusuario: usuarios/autenticacao, categorias por usuario, templates de categoria, contas, cartoes, faturas, orcamentos, importacoes, recorrencias, parcelamentos, lancamentos, anexos e views de resumo.
+
+A evolucao deve ser incremental. Ao implementar uma parte do dominio, criar migrations menores no backend, acompanhadas de model, repository, service, controller e testes. Ordem sugerida:
+
+1. Autenticacao e usuarios.
+2. Categorias padrao e categorias por usuario.
+3. Contas financeiras, cartoes e faturas.
+4. Orcamentos, importacoes, recorrencias e parcelamentos.
+5. Lancamentos financeiros, anexos e views de consulta.
 
 ### Comandos
 
@@ -325,4 +345,8 @@ apps/
 
 packages/
   shared/    # vazio no snapshot atual
+
+docs/
+  assets/brand/
+  database/blueprints/2026-05-23-augustus-multiusuario/
 ```
