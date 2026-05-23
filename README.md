@@ -44,10 +44,12 @@ Projeto Maven/Spring Boot chamado `api-regime-geral`, com artefato `CalculadorTr
 - Spring Web MVC (`spring-boot-starter-web`)
 - Spring WebFlux (`spring-boot-starter-webflux`)
 - Spring Validation / Jakarta Bean Validation
+- Spring Security 6.x
+- Spring Mail
 - Spring Data JPA
 - Hibernate Community Dialects
 - SQLite (`sqlite-jdbc`)
-- Flyway Maven Plugin, com scripts em `apps/backend/flyway/sql`
+- Flyway Maven Plugin e Flyway runtime, com scripts em `apps/backend/flyway/sql`
 - Spring Cache com Caffeine
 - Spring Retry
 - springdoc-openapi 2.8.9 / Swagger UI
@@ -56,12 +58,13 @@ Projeto Maven/Spring Boot chamado `api-regime-geral`, com artefato `CalculadorTr
 - Lombok
 - Jackson XML
 - ModelMapper 3.2.5
+- JJWT 0.12.6 (`jjwt-api`, `jjwt-impl`, `jjwt-jackson`)
 - Apache Commons JEXL 3.5.0
 - Apache Commons Lang 3.18.0
 - JUnit 5, AssertJ, Mockito, Spring Test e MockMvc via `spring-boot-starter-test`
 - JaCoCo 0.8.12
 
-O backend atual nao usa PostgreSQL, JWT, Spring Security como camada de autenticacao, Angular, Flutter, Docker Compose ou Testcontainers.
+O backend atual nao usa PostgreSQL, H2, Docker Compose, Testcontainers, Angular ou Flutter como dependencia do backend.
 
 ### Banco e perfis
 
@@ -72,7 +75,9 @@ O perfil principal configurado no repositorio e `offline`.
 - Actuator/Prometheus: porta `9101`
 - Banco offline: SQLite em `./calculadora/db/${application.db.filename}`
 - Arquivo padrao do perfil `offline`: `calculadora-pro.db`
-- Perfil de testes: `application-testes.yml`, tambem usando SQLite
+- Perfil de testes: `application-testes.yml`, usando SQLite isolado em `./target/test-db/calculadora-test.db`
+- No profile `testes`, Flyway runtime aplica as migrations automaticamente antes do contexto Spring. `.\mvnw.cmd clean test` recria o banco do zero.
+- `application.memoriacalculo.enabled=true` permanece definido em `application-testes.yml` porque os testes legados carregam `MemoriaCalculoService`.
 
 Configs Flyway presentes:
 
@@ -98,6 +103,64 @@ A evolucao deve ser incremental. Ao implementar uma parte do dominio, criar migr
 3. Contas financeiras, cartoes e faturas.
 4. Orcamentos, importacoes, recorrencias e parcelamentos.
 5. Lancamentos financeiros, anexos e views de consulta.
+
+### Autenticacao Augustus (V0030)
+
+A primeira fatia real do dominio Augustus esta implementada em `apps/backend/flyway/sql/manutencao/V0030__augustus_autenticacao_usuarios.sql`.
+
+Tabelas entregues: `usuario`, `usuario_credencial`, `sessao_usuario`, `token_usuario` e `login_auditoria`.
+
+Endpoints REST sob `/api`:
+
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+- `GET /auth/me`
+- `POST /auth/verify-email`
+- `GET /auth/verify-email?token=...`
+- `POST /auth/resend-verification`
+
+Regras entregues:
+
+- Login exige email verificado; antes disso retorna 403 `EMAIL_NAO_VERIFICADO`.
+- Senha sempre BCrypt.
+- Access token e JWT HS256 com `sub` do usuario e `sid` da sessao.
+- Refresh token e opaco, rotativo e armazenado apenas como SHA-256 hex em `sessao_usuario.refresh_token_hash`.
+- Token de verificacao de email tambem e armazenado apenas como SHA-256 hex em `token_usuario.token_hash`.
+- `/auth/refresh` revoga a sessao antiga e invalida o access token antigo pelo `sid`.
+- `/auth/logout` exige access token valido e revoga somente a sessao corrente.
+- `/auth/resend-verification` nao vaza existencia de email e respeita cooldown padrao de 1 minuto.
+- Endpoints legados da calculadora, Swagger e Actuator continuam publicos.
+- Reset de senha ainda esta pendente.
+- Tabelas financeiras do blueprint ainda nao foram implementadas.
+
+Configuracao local de segredos:
+
+- `apps/backend/.env.example` e o template comitavel.
+- `apps/backend/.env` e opcional, carregado automaticamente no profile `offline` por `spring.config.import: "optional:file:./.env[.properties]"`.
+- `.env` real e ignorado pelo git; nao commitar segredos.
+- Variaveis de ambiente do sistema continuam tendo precedencia sobre o `.env`.
+
+Variaveis relevantes:
+
+- `AUGUSTUS_JWT_SECRET` obrigatoria no profile `offline`, com pelo menos 32 caracteres. A aplicacao falha ao iniciar se faltar ou contiver `dev-only`/`trocar-em-producao`.
+- `AUGUSTUS_MAIL_HOST` default `smtp.gmail.com`.
+- `AUGUSTUS_MAIL_PORT` default `587`.
+- `AUGUSTUS_MAIL_USERNAME`.
+- `AUGUSTUS_MAIL_PASSWORD`, que deve ser Gmail App Password, nao a senha normal da conta. A conta precisa de 2FA e a senha deve ser criada em `https://myaccount.google.com/apppasswords`.
+- `AUGUSTUS_MAIL_FROM`.
+- `AUGUSTUS_VERIFICACAO_URL` opcional, default `http://localhost:8080/api/auth/verify-email`.
+
+Exemplo de setup local:
+
+```powershell
+cd apps\backend
+Copy-Item .env.example .env
+# edite .env e preencha AUGUSTUS_JWT_SECRET e SMTP
+.\mvnw.cmd -Dflyway.configFiles=.\flyway\flyway-nonpro.conf flyway:migrate
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=offline"
+```
 
 ### Comandos
 
@@ -142,6 +205,14 @@ Com a aplicacao rodando:
 - `POST /api/calculadora/xml/generate`
 - `POST /api/calculadora/xml/validate`
 - `GET /api/calculadora/dados-abertos/...`
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `POST /api/auth/verify-email`
+- `GET /api/auth/verify-email?token=...`
+- `POST /api/auth/resend-verification`
 
 ## Frontend Web
 

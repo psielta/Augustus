@@ -15,7 +15,11 @@ import br.gov.serpro.rtc.domain.service.exception.CampoInvalidoException;
 import br.gov.serpro.rtc.domain.service.exception.CaptchaException;
 import br.gov.serpro.rtc.domain.service.exception.ClassificacaoTributariaNaoEncontradaException;
 import br.gov.serpro.rtc.domain.service.exception.ClassificacaoTributariaNaoVinculadaSituacaoTributariaException;
+import br.gov.serpro.rtc.domain.service.exception.CredenciaisInvalidasException;
 import br.gov.serpro.rtc.domain.service.exception.DataFatoGeradorNaoInformadaException;
+import br.gov.serpro.rtc.domain.service.exception.EmailJaCadastradoException;
+import br.gov.serpro.rtc.domain.service.exception.EmailNaoVerificadoException;
+import br.gov.serpro.rtc.domain.service.exception.EnvioEmailFalhouException;
 import br.gov.serpro.rtc.domain.service.exception.ErroFaltaImplementacaoException;
 import br.gov.serpro.rtc.domain.service.exception.ErroInternoSistemaException;
 import br.gov.serpro.rtc.domain.service.exception.ErroXmlException;
@@ -33,13 +37,17 @@ import br.gov.serpro.rtc.domain.service.exception.NcmCompletoNaoInformadoExcepti
 import br.gov.serpro.rtc.domain.service.exception.NcmNaoEncontradaException;
 import br.gov.serpro.rtc.domain.service.exception.NcmNaoVinculadaException;
 import br.gov.serpro.rtc.domain.service.exception.NcmNbsSimultaneasException;
+import br.gov.serpro.rtc.domain.service.exception.NaoAutenticadoException;
 import br.gov.serpro.rtc.domain.service.exception.NegocioException;
 import br.gov.serpro.rtc.domain.service.exception.NomenclaturaException;
+import br.gov.serpro.rtc.domain.service.exception.RefreshTokenInvalidoException;
 import br.gov.serpro.rtc.domain.service.exception.SiglaDFeNaoEncontradaException;
 import br.gov.serpro.rtc.domain.service.exception.SituacaoTributariaNaoEncontradaException;
+import br.gov.serpro.rtc.domain.service.exception.TokenVerificacaoInvalidoException;
 import br.gov.serpro.rtc.domain.service.exception.TributacaoRegularInformadaIndevidamenteException;
 import br.gov.serpro.rtc.domain.service.exception.TributacaoRegularNaoInformadaException;
 import br.gov.serpro.rtc.domain.service.exception.UfNaoEncontradaException;
+import br.gov.serpro.rtc.domain.service.exception.UsuarioBloqueadoException;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -116,6 +124,22 @@ public enum ProblemType {
     ERRO_XML(ErroXmlException.class, "Erro de validação de XML", "erro-xml"),
 
     ERRO_FALTA_IMPLEMENTACAO(ErroFaltaImplementacaoException.class, "Classificação tributária em desenvolvimento", "erro-falta-implementacao"),
+
+    EMAIL_JA_CADASTRADO(EmailJaCadastradoException.class, "Email ja cadastrado", "email-ja-cadastrado"),
+
+    EMAIL_NAO_VERIFICADO(EmailNaoVerificadoException.class, "Email nao verificado", "email-nao-verificado"),
+
+    CREDENCIAIS_INVALIDAS(CredenciaisInvalidasException.class, "Credenciais invalidas", "credenciais-invalidas"),
+
+    USUARIO_BLOQUEADO(UsuarioBloqueadoException.class, "Usuario bloqueado", "usuario-bloqueado"),
+
+    REFRESH_TOKEN_INVALIDO(RefreshTokenInvalidoException.class, "Refresh token invalido", "refresh-token-invalido"),
+
+    TOKEN_VERIFICACAO_INVALIDO(TokenVerificacaoInvalidoException.class, "Token de verificacao invalido", "token-verificacao-invalido"),
+
+    NAO_AUTENTICADO(NaoAutenticadoException.class, "Nao autenticado", "nao-autenticado"),
+
+    ENVIO_EMAIL_FALHOU(EnvioEmailFalhouException.class, "Falha no envio de email", "envio-email-falhou"),
 
     ERRO_NEGOCIO(NegocioException.class, "Violação de regra de negócio", "erro-negocio"),
     

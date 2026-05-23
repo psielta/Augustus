@@ -25,6 +25,7 @@ public class CacheSpecs {
 	public static class CacheSpec {
 	    private String name;
 	    private Duration expireAfterAccess;
+	    private Duration expireAfterWrite;
 	    private int initialCapacity;
 	    private int maximumSize;
 	}

@@ -28,7 +28,7 @@ Aplicacoes presentes no snapshot atual:
 - `apps/web` — Frontend Angular 19 inicializado a partir do quickstart oficial GovBR-DS Web Components (`https://gitlab.com/govbr-ds/bibliotecas/wbc/govbr-ds-wbc-quickstart-angular`). Ver secao [Frontend Web](#frontend-web-appsweb).
 - `apps/mobile` - Aplicativo Flutter clonado do template Flutter Riverpod Clean Architecture (`https://github.com/ssoad/flutter_riverpod_clean_architecture`). Ver secao [Mobile](#mobile-appsmobile).
 
-As pastas `packages/shared` e `docker` continuam vazias ou sem manifests de tecnologia no snapshot atual. A pasta `docs` contem documentacao, assets de marca e blueprints de banco, mas nada ali e executado automaticamente pela aplicacao. Nao assumir Docker Compose, PostgreSQL, JWT, Node fora de `apps/web` ou qualquer outra stack ate que ela exista no repositorio.
+As pastas `packages/shared` e `docker` continuam vazias ou sem manifests de tecnologia no snapshot atual. A pasta `docs` contem documentacao, assets de marca e blueprints de banco, mas nada ali e executado automaticamente pela aplicacao. Nao assumir Docker Compose, PostgreSQL, Node fora de `apps/web` ou qualquer outra stack ate que ela exista no repositorio.
 
 ## Fonte de verdade (backend)
 
@@ -50,10 +50,13 @@ Para o frontend, ver secao [Frontend Web](#frontend-web-appsweb). Para o mobile,
 - API HTTP: Spring Web MVC
 - Dependencia adicional HTTP/reativa: Spring WebFlux
 - Validacao: Spring Validation / Jakarta Bean Validation
+- Autenticacao: Spring Security 6.x
+- Email: Spring Mail
 - Persistencia: Spring Data JPA
 - Dialeto JPA: Hibernate Community Dialects
 - Banco configurado: SQLite via `org.xerial:sqlite-jdbc`
-- Migracoes: Flyway Maven Plugin
+- Migracoes: Flyway Maven Plugin e Flyway runtime no profile `testes`
+- Tokens JWT: JJWT 0.12.6
 - Cache: Spring Cache + Caffeine
 - Retry: Spring Retry
 - OpenAPI/Swagger: `org.springdoc:springdoc-openapi-starter-webmvc-ui` 2.8.9
@@ -69,15 +72,13 @@ Para o frontend, ver secao [Frontend Web](#frontend-web-appsweb). Para o mobile,
 Nao existe no backend atual:
 
 - PostgreSQL
-- JWT
-- Spring Security como autenticacao de negocio
 - H2
 - Testcontainers
 - Spotless
 - Flutter
 - Docker Compose funcional
 
-Observacao 1: a aplicacao exclui `UserDetailsServiceAutoConfiguration`, mas o `pom.xml` nao declara `spring-boot-starter-security`.
+Observacao 1: a aplicacao exclui `UserDetailsServiceAutoConfiguration`; a autenticacao Augustus valida credenciais no `AutenticacaoService` e nao usa `UserDetailsService` customizado.
 
 Observacao 2: Angular e GovBR-DS existem no repositorio, porem somente em `apps/web` — o backend nao depende deles nem ha integracao escrita entre as duas aplicacoes ainda.
 
@@ -117,7 +118,7 @@ Perfil principal documentado: `offline`.
 - Actuator health: `http://localhost:9101/health`
 - Prometheus metrics: `http://localhost:9101/metrics`
 - Banco offline: `./calculadora/db/calculadora-pro.db`
-- Banco de testes: SQLite configurado em `application-testes.yml`
+- Banco de testes: `./target/test-db/calculadora-test.db`, recriado por `.\mvnw.cmd clean test`
 
 ## Arquitetura existente do backend
 
@@ -179,6 +180,57 @@ Todos ficam sob o context path `/api`.
 - `GET /calculadora/dados-abertos/aliquota-municipio`
 - `GET /calculadora/dados-abertos/versao`
 - `GET /versao/status` somente no perfil `offline`
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+- `GET /auth/me`
+- `POST /auth/verify-email`
+- `GET /auth/verify-email?token=...`
+- `POST /auth/resend-verification`
+
+## Autenticacao Augustus
+
+Implementacao atual: primeira fatia de autenticacao/usuarios em `apps/backend`, com migration `V0030__augustus_autenticacao_usuarios.sql`.
+
+Stack real dessa fatia:
+
+- Spring Security stateless.
+- JWT HS256 via JJWT 0.12.6.
+- Refresh token opaco com SHA-256 hex persistido.
+- BCrypt para senha.
+- Spring Mail via SMTP.
+- Flyway runtime habilitado no profile `testes`.
+
+Regras obrigatorias:
+
+- Login exige email verificado; usuario pendente recebe 403 `EMAIL_NAO_VERIFICADO`.
+- `register` cria usuario `PENDENTE_VERIFICACAO`, gera token de verificacao e envia email.
+- `POST /auth/verify-email` responde 204 em sucesso; `GET /auth/verify-email?token=...` responde `text/plain` para link clicavel.
+- `refresh` sempre rotaciona refresh token, revoga a sessao antiga e invalida o access token antigo pelo `sid`.
+- `logout` exige access token valido e revoga apenas a sessao do `sid` corrente.
+- `resend-verification` sempre retorna 204, nao vaza existencia de email e respeita `auth.resend.cooldown`.
+- Endpoints legados `/calculadora/**`, `/dados-abertos/**`, `/versao/**`, Swagger e Actuator continuam publicos.
+- Reset de senha ainda nao existe.
+
+Seguranca e dados sensiveis:
+
+- Senha sempre BCrypt.
+- Refresh token sempre SHA-256 hex em `sessao_usuario.refresh_token_hash`.
+- Token de verificacao sempre SHA-256 hex em `token_usuario.token_hash`.
+- Nunca expor `senha_hash`, `refresh_token_hash`, `token_hash` ou qualquer `*_hash` em DTOs.
+- Nunca logar token de verificacao plain nem `AUGUSTUS_MAIL_PASSWORD`.
+- `EmailService` e a abstracao; controllers e services de negocio nao devem injetar `JavaMailSender` diretamente.
+- Enums de auth usam `@Enumerated(EnumType.STRING)` por causa dos `CHECK` constraints do blueprint.
+
+Configuracao local:
+
+- `apps/backend/.env.example` e comitavel.
+- `apps/backend/.env` e git-ignored e carregado no profile `offline` por `spring.config.import`.
+- `AUGUSTUS_JWT_SECRET` e obrigatorio em `offline`, deve ter pelo menos 32 caracteres e nao pode conter `dev-only`/`trocar-em-producao`.
+- SMTP Gmail usa `AUGUSTUS_MAIL_HOST`, `AUGUSTUS_MAIL_PORT`, `AUGUSTUS_MAIL_USERNAME`, `AUGUSTUS_MAIL_PASSWORD`, `AUGUSTUS_MAIL_FROM`.
+- `AUGUSTUS_MAIL_PASSWORD` deve ser Gmail App Password de `https://myaccount.google.com/apppasswords`, com 2FA habilitado.
+- `AUGUSTUS_VERIFICACAO_URL` define a URL base do link de verificacao.
 
 ## Banco e migracoes
 
@@ -209,6 +261,8 @@ Padroes reais do backend:
 - Testes unitarios com JUnit 5, AssertJ e Mockito.
 - Testes de integracao com `@SpringBootTest`, `@AutoConfigureMockMvc`, `MockMvc` e `@TestPropertySource(locations = "classpath:application-testes.yml")`.
 - O banco de testes tambem e SQLite.
+- O banco de testes fica em `./target/test-db`; `.\mvnw.cmd clean test` recria do zero e aplica Flyway automaticamente.
+- `application.memoriacalculo.enabled=true` deve permanecer em `application-testes.yml`, pois testes legados inicializam `MemoriaCalculoService`.
 - Nao converter para Testcontainers ou H2 sem decisao explicita.
 
 ## Frontend Web (apps/web)
@@ -496,7 +550,7 @@ Padrao predominante:
 - Preserve o backend original enquanto a migracao de dominio nao for planejada.
 - Ao adicionar funcionalidades de financas pessoais no backend, siga a arquitetura existente: controller, service, repository, model e tratamento central de erro.
 - Use o blueprint em `docs/database/blueprints/2026-05-23-augustus-multiusuario` como mapa de chegada, nao como migration unica a ser aplicada de uma vez.
-- Se introduzir autenticacao, PostgreSQL, Docker ou outra stack nova, primeiro adicione manifests/configuracoes reais e depois atualize este arquivo e o `README.md`. O frontend Angular ja foi adicionado em `apps/web` e o mobile Flutter foi adicionado em `apps/mobile`.
+- Se introduzir PostgreSQL, Docker ou outra stack nova, primeiro adicione manifests/configuracoes reais e depois atualize este arquivo e o `README.md`. O frontend Angular ja foi adicionado em `apps/web`, o mobile Flutter foi adicionado em `apps/mobile` e a autenticacao do backend foi adicionada em `apps/backend`.
 - Nao declarar tecnologias em documentacao antes de elas existirem no codigo.
 - Ao criar novos modelos no backend, siga o estilo local com Lombok e classes Java, a menos que o projeto decida migrar padrao.
 - Contratos HTTP novos no backend devem ter anotacoes OpenAPI nas interfaces em `api/openapi/controller`.
@@ -505,13 +559,15 @@ Padrao predominante:
 
 ## O que nao fazer
 
-- Nao mencionar JWT ou PostgreSQL como stack atual.
+- Nao mencionar PostgreSQL como stack atual.
 - Nao tratar Flutter como tecnologia do backend ou do frontend web; Flutter existe apenas em `apps/mobile`.
 - Nao implementar dark mode ou alternancia de tema no frontend web ou no mobile.
 - Nao tratar Angular ou GovBR-DS como tecnologia do backend — eles existem apenas em `apps/web` e ainda nao ha integracao escrita entre as duas aplicacoes.
 - Nao trocar SQLite por outro banco sem alterar configuracao, migracoes e testes.
 - Nao impor records para DTOs no backend; o projeto atual usa classes com Lombok.
-- Nao assumir security/JWT porque existe referencia a `security` em logging ou exclusao de autoconfiguracao.
+- Nao expor hashes, tokens plain ou senha SMTP em respostas, logs ou DTOs.
+- Nao injetar `JavaMailSender` fora de `SmtpEmailService`.
+- Nao commitar `.env` real; somente `.env.example`.
 - Nao remover XSDs/modelos XML sem entender os endpoints `/calculadora/xml`.
 - Nao alterar comportamento tributario original enquanto ele ainda for usado como base de referencia.
 - Nao mover o blueprint de banco de `docs/database/blueprints` para Flyway como uma migration unica sem plano incremental.

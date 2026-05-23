@@ -15,6 +15,7 @@ spring:
   application:
     name: api-regime-geral
   config:
+    import: "optional:file:./.env[.properties]"
     activate:
       on-profile: offline
   datasource:
@@ -33,6 +34,17 @@ spring:
   sql:
     init:
       mode: embedded
+  flyway:
+    enabled: false
+  mail:
+    host: ${AUGUSTUS_MAIL_HOST:smtp.gmail.com}
+    port: ${AUGUSTUS_MAIL_PORT:587}
+    username: ${AUGUSTUS_MAIL_USERNAME:}
+    password: ${AUGUSTUS_MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
   task:
     execution:
       pool:
@@ -253,3 +265,20 @@ management:
 
 versao:
   url: ${VERSAO_OFFLINE_URL:https://piloto-cbs.tributos.gov.br/servico/calculadora-consumo/api/calculadora/dados-abertos/versao}
+
+auth:
+  jwt:
+    secret: ${AUGUSTUS_JWT_SECRET}
+    access-ttl: PT15M
+    refresh-ttl: P30D
+    verificacao-ttl: P1D
+    issuer: augustus-backend
+  lockout:
+    max-falhas: 5
+    duracao-minutos: 15
+  verificacao:
+    base-url: ${AUGUSTUS_VERIFICACAO_URL:http://localhost:8080/api/auth/verify-email}
+  mail:
+    from: ${AUGUSTUS_MAIL_FROM:}
+  resend:
+    cooldown: PT1M

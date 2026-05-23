@@ -6,6 +6,8 @@ application:
   dateTimeFormatBanco: yyyy-MM-dd
   ibs:
     enabled: true
+  memoriacalculo:
+    enabled: true
 
 spring:
   application:
@@ -17,13 +19,13 @@ spring:
     virtual:
       enabled: true
   datasource:
-    url: jdbc:sqlite:file:./calculadora/db/calculadora.db?date_class=TEXT&date_string_format=${application.date-time-format-banco}
+    url: jdbc:sqlite:file:./target/test-db/calculadora-test.db?date_class=TEXT&date_string_format=yyyy-MM-dd&foreign_keys=ON
     username: sa
     password: 
     driverClassName: org.sqlite.JDBC
   jpa:
     database-platform: org.hibernate.community.dialect.SQLiteDialect
-    defer-datasource-initialization: true
+    defer-datasource-initialization: false
     open-in-view: false
     show-sql: false
     properties:
@@ -32,6 +34,16 @@ spring:
   sql:
     init:
       mode: embedded
+  flyway:
+    enabled: true
+    locations: filesystem:./flyway/sql
+    baseline-on-migrate: true
+    mixed: true
+  mail:
+    host: localhost
+    port: 25
+    username: test
+    password: test
   codec:
     max-in-memory-size: 500KB
   devtools:
@@ -157,3 +169,20 @@ management:
       base-path: "/"
       path-mapping:
         prometheus: "metrics"
+
+auth:
+  jwt:
+    secret: test-only-segredo-fixo-32-bytes-xxxxxxxxxxxxxx
+    access-ttl: PT5M
+    refresh-ttl: PT1H
+    verificacao-ttl: PT15M
+    issuer: augustus-backend
+  lockout:
+    max-falhas: 5
+    duracao-minutos: 15
+  verificacao:
+    base-url: http://localhost:8080/api/auth/verify-email
+  mail:
+    from: noreply@test.local
+  resend:
+    cooldown: PT5M

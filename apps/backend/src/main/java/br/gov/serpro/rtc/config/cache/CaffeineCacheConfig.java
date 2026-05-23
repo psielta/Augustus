@@ -3,6 +3,8 @@
  */
 package br.gov.serpro.rtc.config.cache;
 
+import java.time.Duration;
+
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
@@ -27,12 +29,26 @@ public class CaffeineCacheConfig {
     }
 
 	private static void buildCache(CaffeineCacheManager manager, CacheSpecs.CacheSpec cacheConfig) {
-		final Cache<Object, Object> cache = Caffeine.newBuilder()
-				.expireAfterAccess(cacheConfig.getExpireAfterAccess())
+		final Cache<Object, Object> cache = aplicarExpiracao(Caffeine.newBuilder(), cacheConfig)
 				.initialCapacity(cacheConfig.getInitialCapacity())
 				.maximumSize(cacheConfig.getMaximumSize())
 				.recordStats()
 				.build();
 		manager.registerCustomCache(cacheConfig.getName(), cache);
+	}
+
+	private static Caffeine<Object, Object> aplicarExpiracao(Caffeine<Object, Object> builder,
+			CacheSpecs.CacheSpec cacheConfig) {
+		final Duration expireAfterAccess = cacheConfig.getExpireAfterAccess();
+		if (expireAfterAccess != null) {
+			return builder.expireAfterAccess(expireAfterAccess);
+		}
+
+		final Duration expireAfterWrite = cacheConfig.getExpireAfterWrite();
+		if (expireAfterWrite != null) {
+			return builder.expireAfterWrite(expireAfterWrite);
+		}
+
+		return builder;
 	}
 }
