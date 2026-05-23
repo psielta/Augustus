@@ -81,82 +81,82 @@ springdoc:
 cache:
   specs:
     - name: AliquotaAdRemProdutoRepository.buscarAliquotaAdRem
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 100
     - name: AliquotaAdValoremProdutoRepository.buscarAliquotaAdValorem
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 100
     - name: AliquotaPadraoRepository.buscarAliquotaUniao
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: AliquotaPadraoRepository.buscarAliquotaUf
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: AliquotaPadraoRepository.buscarAliquotaMunicipio
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: AliquotaReferenciaRepository.buscar
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: ClassificacaoTributariaRepository.buscarClassificacaoTributariaCbsIbs
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 100
     - name: ClassificacaoTributariaRepository.buscarClassificacaoTributariaImpostoSeletivo
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: FundamentacaoClassificacaoRepository.buscar
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 200
     - name: NbsAplicavelRepository.temNbsAplicavel
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: NbsAplicavelRepository.temExcecaoNbsAplicavel
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: NbsAplicavelRepository.temNbsAplicavelSemExcecao
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: NbsAplicavelRepository.tem
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: NbsRepository.existeNbs
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 500
     - name: NcmAplicavelRepository.temNcmAplicavel
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: NcmAplicavelRepository.temExcecaoNcmAplicavel
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: NcmAplicavelRepository.temNcmAplicavelSemExcecao
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: NcmAplicavelRepository.tem
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: NcmRepository.existeNcm
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 500
     - name: PercentualReducaoRepository.buscar
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: SituacaoTributariaRepository.existeCst
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: TratamentoClassificacaoRepository.buscarTratamentoClassificacao
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: UfRepository.consultarPorSigla
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 50
     - name: UfRepository.existeUf
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 30
     - name: TemplateTokenizerService.tokenize
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 100
     - name: TokenCacheService.get
-      expireAfterAccess: "P1D"
+      expireAfterWrite: "P1D"
       initialCapacity: 100
           
 management:
@@ -185,4 +185,4 @@ auth:
   mail:
     from: noreply@test.local
   resend:
-    cooldown: PT0S
+    cooldown: PT5M

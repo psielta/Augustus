@@ -20,7 +20,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,7 +38,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import br.gov.serpro.rtc.config.security.AuthProperties;
 import br.gov.serpro.rtc.domain.model.entity.SessaoUsuario;
 import br.gov.serpro.rtc.domain.model.entity.TokenUsuario;
 import br.gov.serpro.rtc.domain.repository.LoginAuditoriaRepository;
@@ -86,9 +84,6 @@ class Teste_Autenticacao_Controller {
     @Autowired
     private JwtTokenService jwtTokenService;
 
-    @Autowired
-    private AuthProperties authProperties;
-
     @MockitoBean
     private EmailService emailService;
 
@@ -96,11 +91,6 @@ class Teste_Autenticacao_Controller {
     void setUp() {
         limparTabelasAuth();
         reset(emailService);
-    }
-
-    @AfterEach
-    void resetCooldown() {
-        authProperties.getResend().setCooldown(Duration.ZERO);
     }
 
     private void limparTabelasAuth() {
@@ -229,6 +219,28 @@ class Teste_Autenticacao_Controller {
             var credencial = usuarioCredencialRepository.findById(usuario.getId()).orElseThrow();
             org.assertj.core.api.Assertions.assertThat(credencial.getTentativasLoginFalhas()).isZero();
             org.assertj.core.api.Assertions.assertThat(loginAuditoriaRepository.count()).isGreaterThan(auditoriasAntes);
+        }
+
+        @Test
+        void loginUsaRemoteAddrENaoHeaderForwardedFor() throws Exception {
+            String email = novoEmail();
+            cadastrarEVerificar(email);
+
+            MvcResult result = mockMvc.perform(postJson("/auth/login", AuthFixtures.login(email))
+                            .header("X-Forwarded-For", "203.0.113.10")
+                            .with(request -> {
+                                request.setRemoteAddr("10.0.0.5");
+                                return request;
+                            }))
+                    .andExpect(status().isOk())
+                    .andReturn();
+
+            TokenPair tokens = tokens(result);
+            SessaoUsuario sessao = sessaoUsuarioRepository
+                    .findByRefreshTokenHashAndRevogadoEmIsNull(refreshTokenService.hashSha256(tokens.refreshToken()))
+                    .orElseThrow();
+            org.assertj.core.api.Assertions.assertThat(sessao.getIpCriacao()).isEqualTo("10.0.0.5");
+            org.assertj.core.api.Assertions.assertThat(loginAuditoriaRepository.findAll().get(0).getIp()).isEqualTo("10.0.0.5");
         }
     }
 
@@ -378,6 +390,7 @@ class Teste_Autenticacao_Controller {
         void usuarioPendente_invalidaTokensAntigos_criaNovo_retorna204() throws Exception {
             String email = novoEmail();
             String tokenAntigo = cadastrar(email);
+            envelhecerToken(tokenAntigo, Duration.ofMinutes(10));
             reset(emailService);
 
             mockMvc.perform(postJson("/auth/resend-verification", Map.of("email", email)))
@@ -408,7 +421,6 @@ class Teste_Autenticacao_Controller {
 
         @Test
         void dentroCooldown_retorna204SemEnviarEmail() throws Exception {
-            authProperties.getResend().setCooldown(Duration.ofMinutes(5));
             String email = novoEmail();
             cadastrar(email);
             reset(emailService);
@@ -443,6 +455,14 @@ class Teste_Autenticacao_Controller {
         mockMvc.perform(postJson("/auth/register", AuthFixtures.registro(email)))
                 .andExpect(status().isCreated());
         return ultimoTokenEnviado();
+    }
+
+    private void envelhecerToken(String tokenPlain, Duration idade) {
+        TokenUsuario token = tokenUsuarioRepository
+                .findByTokenHashAndUsadoEmIsNull(refreshTokenService.hashSha256(tokenPlain))
+                .orElseThrow();
+        token.setCriadoEm(Instant.now().minus(idade));
+        tokenUsuarioRepository.save(token);
     }
 
     private TokenPair login(String email) throws Exception {

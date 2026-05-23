@@ -1,6 +1,7 @@
 package br.gov.serpro.rtc.config.security;
 
 import java.time.Duration;
+import java.util.Locale;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -25,7 +26,7 @@ public class AuthProperties {
         if (secret == null || secret.length() < 32) {
             throw new IllegalStateException("auth.jwt.secret deve ter pelo menos 32 caracteres.");
         }
-        String lower = secret.toLowerCase();
+        String lower = secret.toLowerCase(Locale.ROOT);
         if (lower.contains("dev-only") || lower.contains("trocar-em-producao")) {
             throw new IllegalStateException("auth.jwt.secret contem marcador inseguro.");
         }

@@ -181,6 +181,7 @@ Testes:
 - Integracao com `@SpringBootTest`, `@AutoConfigureMockMvc`, `MockMvc` e `application-testes.yml`.
 - Banco de testes tambem e SQLite, isolado em `./target/test-db`.
 - `.\mvnw.cmd clean test` recria o banco de teste do zero e aplica Flyway automaticamente.
+- `application.memoriacalculo.enabled=true` deve permanecer em `application-testes.yml`, pois testes legados inicializam `MemoriaCalculoService`.
 - Nao converter para H2/Testcontainers sem decisao explicita.
 
 ### Autenticacao Augustus

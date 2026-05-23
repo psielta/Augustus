@@ -106,10 +106,6 @@ public class AutenticacaoController implements AutenticacaoControllerOpenApi {
     }
 
     private String ip(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",", 2)[0].trim();
-        }
         return request.getRemoteAddr();
     }
 

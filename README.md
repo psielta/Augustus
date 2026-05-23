@@ -77,6 +77,7 @@ O perfil principal configurado no repositorio e `offline`.
 - Arquivo padrao do perfil `offline`: `calculadora-pro.db`
 - Perfil de testes: `application-testes.yml`, usando SQLite isolado em `./target/test-db/calculadora-test.db`
 - No profile `testes`, Flyway runtime aplica as migrations automaticamente antes do contexto Spring. `.\mvnw.cmd clean test` recria o banco do zero.
+- `application.memoriacalculo.enabled=true` permanece definido em `application-testes.yml` porque os testes legados carregam `MemoriaCalculoService`.
 
 Configs Flyway presentes:
 

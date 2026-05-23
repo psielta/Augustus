@@ -78,7 +78,7 @@ Nao existe no backend atual:
 - Flutter
 - Docker Compose funcional
 
-Observacao 1: a aplicacao exclui `UserDetailsServiceAutoConfiguration` e declara seu proprio `AugustusUserDetailsService`.
+Observacao 1: a aplicacao exclui `UserDetailsServiceAutoConfiguration`; a autenticacao Augustus valida credenciais no `AutenticacaoService` e nao usa `UserDetailsService` customizado.
 
 Observacao 2: Angular e GovBR-DS existem no repositorio, porem somente em `apps/web` — o backend nao depende deles nem ha integracao escrita entre as duas aplicacoes ainda.
 
@@ -262,6 +262,7 @@ Padroes reais do backend:
 - Testes de integracao com `@SpringBootTest`, `@AutoConfigureMockMvc`, `MockMvc` e `@TestPropertySource(locations = "classpath:application-testes.yml")`.
 - O banco de testes tambem e SQLite.
 - O banco de testes fica em `./target/test-db`; `.\mvnw.cmd clean test` recria do zero e aplica Flyway automaticamente.
+- `application.memoriacalculo.enabled=true` deve permanecer em `application-testes.yml`, pois testes legados inicializam `MemoriaCalculoService`.
 - Nao converter para Testcontainers ou H2 sem decisao explicita.
 
 ## Frontend Web (apps/web)

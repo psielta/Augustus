@@ -1,6 +1,8 @@
 package br.gov.serpro.rtc.domain.model.converter;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import jakarta.persistence.AttributeConverter;
@@ -16,7 +18,15 @@ public class InstantTextConverter implements AttributeConverter<Instant, String>
 
     @Override
     public Instant convertToEntityAttribute(String dbData) {
-        return dbData == null || dbData.isBlank() ? null : Instant.parse(dbData);
+        if (dbData == null || dbData.isBlank()) {
+            return null;
+        }
+        try {
+            return Instant.parse(dbData);
+        } catch (RuntimeException ex) {
+            return LocalDateTime.parse(dbData, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    .toInstant(ZoneOffset.UTC);
+        }
     }
 
 }
