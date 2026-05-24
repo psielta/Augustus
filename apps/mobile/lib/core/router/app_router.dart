@@ -3,17 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
 import 'package:flutter_riverpod_clean_architecture/core/providers/localization_providers.dart';
 import 'package:flutter_riverpod_clean_architecture/core/router/locale_aware_router.dart';
-import 'package:flutter_riverpod_clean_architecture/examples/localization_assets_demo.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/screens/login_screen.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/screens/register_screen.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/screens/verify_email_screen.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/screens/verify_pending_screen.dart';
-import 'package:flutter_riverpod_clean_architecture/features/chat/presentation/screens/chat_screen.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/presentation/screens/home_screen.dart';
 import 'package:flutter_riverpod_clean_architecture/features/settings/presentation/screens/language_settings_screen.dart';
 import 'package:flutter_riverpod_clean_architecture/features/settings/presentation/screens/settings_screen.dart';
-import 'package:flutter_riverpod_clean_architecture/features/survey/presentation/screens/survey_screen.dart';
 import 'package:go_router/go_router.dart';
 
 const _publicAuthRoutes = <String>{
@@ -100,21 +97,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppConstants.languageSettingsRoute,
         name: 'language_settings',
         builder: (context, state) => const LanguageSettingsScreen(),
-      ),
-      GoRoute(
-        path: AppConstants.localizationAssetsDemoRoute,
-        name: 'localization_assets_demo',
-        builder: (context, state) => const LocalizationAssetsDemo(),
-      ),
-      GoRoute(
-        path: AppConstants.chatRoute,
-        name: 'chat',
-        builder: (context, state) => const ChatScreen(),
-      ),
-      GoRoute(
-        path: AppConstants.surveyRoute,
-        name: 'survey',
-        builder: (context, state) => const SurveyScreen(),
       ),
       GoRoute(
         path: AppConstants.initialRoute,

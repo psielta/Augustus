@@ -471,14 +471,15 @@ Substitui completamente o auth mock do template. Consome `/api/auth/*` do backen
 - **Detecao de sessao perdida**: nao ha push do interceptor para a UI. A proxima chamada autenticada (`/me`, `/logout`, etc.) falha com 401 (storage ja vazio), `AuthNotifier` atualiza estado, GoRouter redirect leva para `/login`.
 - **`appBootstrapProvider`** (`FutureProvider<void>`) em `main.dart` dispara `AuthNotifier.inicializar()` no startup; `MaterialApp.router` mostra `_BootstrapSplash` enquanto carrega.
 - **Telas**: `LoginScreen`, `RegisterScreen`, `VerifyPendingScreen`, `VerifyEmailScreen` (paste-token fallback, ja que deep link foi adiado). Texto em PT.
-- **GoRouter redirect** atualizado: nao redireciona durante `AuthStatus.inicializando`, redireciona para `/auth/verify-pending` quando `precisaVerificarEmail=true`, mantem rotas publicas do template intocadas (settings, home, chat, etc.).
+- **GoRouter redirect**: nao redireciona durante `AuthStatus.inicializando`; redireciona para `/auth/verify-pending` quando `precisaVerificarEmail=true`; sem sessao manda para `/login`. Rotas publicas hoje sao so as 4 de auth (`/login`, `/register`, `/auth/verify-pending`, `/auth/verify-email`) — as outras (`/home`, `/settings`, `/settings/language`) exigem autenticacao.
 - **`AppConstants.appName`** agora e `Augustus - Controlador de finanças pessoais`. Package Android/iOS continua `com.example.flutter_riverpod_clean_architecture` — renomear via `apps/mobile/rename_app.sh` fica para outra fatia.
 - **Light mode obrigatorio**: `AppTheme.darkTheme` deletado; `MaterialApp.router` nao passa `darkTheme` nem `themeMode`. `themeModeProvider` mantido por compatibilidade mas sempre devolve `ThemeMode.light` e `set()` e no-op.
 
 Ainda e template (nao alterado nesta fatia):
 
 - `AppConstants.packageName` e o Android `applicationId` continuam `com.example.flutter_riverpod_clean_architecture`.
-- Features `chat`, `survey`, `home`, `settings`, localization demo e UI showcase sao exemplos do template, nao dominio de financas pessoais.
+- `home` e `settings` foram simplificadas (home so welcome + placeholder do dashboard; settings so language switcher) — dominio financeiro real ainda nao implementado.
+- Features `chat`, `survey`, `ui_showcase` e o diretorio `lib/examples/` foram removidos (eram puro template, sem nada de financas). Codigo de auth/`home`/`settings` permanece.
 - Deep link / app link / universal link para `/auth/verify-email` nao implementado nesta fatia (UX usa "colar token" como fallback).
 
 ### Comandos do mobile
@@ -529,16 +530,12 @@ apps/mobile/lib/
     router/
     storage/
     theme/
-    ui/
+    ui/                # inclui app_shell.dart (chrome admin: AppBar + Drawer)
   features/
-    auth/
-    chat/
-    home/
-    settings/
-    survey/
-    ui_showcase/
+    auth/              # login, register, verify-pending, verify-email
+    home/              # welcome + placeholder do dashboard
+    settings/          # language switcher
   l10n/
-  examples/
 ```
 
 Estrutura esperada por feature:
