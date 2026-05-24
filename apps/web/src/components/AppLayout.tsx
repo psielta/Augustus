@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import Breadcrumb from "./Breadcrumb/Breadcrumb";
 import Footer from "./Footer/Footer";
@@ -6,14 +6,49 @@ import Header from "./Header/Header";
 import Menu from "./Menu/Menu";
 import styles from "../App.module.css";
 
+const MENU_STORAGE_KEY = "augustus.ui.menuOpen";
+const MOBILE_QUERY = "(max-width: 768px)";
+
+/**
+ * Le o estado inicial da sidebar do localStorage. Se nao houver valor
+ * gravado, escolhe um default razoavel pelo viewport: aberto em desktop
+ * (push tradicional cabe), fechado em mobile (drawer overlay).
+ */
+function lerMenuInicial(): boolean {
+  try {
+    const stored = window.localStorage.getItem(MENU_STORAGE_KEY);
+    if (stored === "true") return true;
+    if (stored === "false") return false;
+  } catch {
+    // localStorage indisponivel — cai no default por viewport
+  }
+  try {
+    return !window.matchMedia(MOBILE_QUERY).matches;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Layout das rotas privadas/admin (`/`, `/formulario`, `/cores`, ...).
  * Composto por Header (com saudacao + Sair), Menu lateral (drawer no
  * mobile, push no desktop), Breadcrumb e Footer. As paginas vao no
  * `<Outlet />`.
+ *
+ * O estado aberto/fechado da sidebar e persistido em
+ * `augustus.ui.menuOpen` para sobreviver a refresh / navegacao SPA /
+ * nova aba — preferencia do usuario sempre vence o default.
  */
 export default function AppLayout() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState<boolean>(lerMenuInicial);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(MENU_STORAGE_KEY, String(menuOpen));
+    } catch {
+      // sem storage o estado continua funcionando, so nao persiste
+    }
+  }, [menuOpen]);
 
   return (
     <>

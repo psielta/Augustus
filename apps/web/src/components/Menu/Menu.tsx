@@ -88,7 +88,16 @@ const Menu: React.FC<MenuProps> = ({ onClose }) => {
   // Navegar para a URL (o item ativo será definido automaticamente pelo useEffect)
   const navigateTo = (url: string) => {
     navigate(url);
-    onClose();
+    // So fecha o drawer em mobile (overlay) — em desktop a sidebar push
+    // fica permanentemente aberta conforme a preferencia salva, e seria
+    // anti-UX fecha-la a cada navegacao.
+    try {
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        onClose();
+      }
+    } catch {
+      // sem matchMedia (raro): conservador, nao fecha
+    }
   };
 
   // Lidar com eventos de teclado para acessibilidade

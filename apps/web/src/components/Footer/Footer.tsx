@@ -38,8 +38,15 @@ interface FooterProps {
   licenseText?: string;
 }
 
+const ANO_ATUAL = new Date().getFullYear();
+
+// Footer com `theme="dark"` por padrao para criar contraste visual com
+// o conteudo (sempre em superficie clara). Isso NAO e dark mode global:
+// e so a faixa inferior que ganha fundo escuro, padrao comum em layouts
+// admin (Bootstrap docs, GitHub etc.). Light mode do produto continua
+// valendo para todo o resto.
 const Footer: React.FC<FooterProps> = ({
-  theme = "light",
+  theme = "dark",
   mainLogo = {
     url: "/brand/augustus-symbol.svg",
     description: "Augustus - Controlador de finanças pessoais",
@@ -47,7 +54,7 @@ const Footer: React.FC<FooterProps> = ({
   categories = [],
   socialLinks = [],
   partnerLogos = [],
-  licenseText = "Augustus - Controlador de finanças pessoais.",
+  licenseText = `© ${ANO_ATUAL} Augustus - Controlador de finanças pessoais.`,
 }) => {
   return (
     <div className="d-flex flex-wrap justify-content-evenly mt-5">
