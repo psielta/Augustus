@@ -35,6 +35,10 @@ function lerMenuInicial(): boolean {
  * mobile, push no desktop), Breadcrumb e Footer. As paginas vao no
  * `<Outlet />`.
  *
+ * O shell e flex-column com `min-height: 100vh` (sticky footer) — o
+ * Footer fica grudado no fim da viewport mesmo quando a pagina renderiza
+ * pouco conteudo, em vez de aparecer no meio da tela.
+ *
  * O estado aberto/fechado da sidebar e persistido em
  * `augustus.ui.menuOpen` para sobreviver a refresh / navegacao SPA /
  * nova aba — preferencia do usuario sempre vence o default.
@@ -51,11 +55,11 @@ export default function AppLayout() {
   }, [menuOpen]);
 
   return (
-    <>
+    <div className={styles.shell}>
       <Header onToggleMenu={() => setMenuOpen((v) => !v)} />
-      <main className="d-flex flex-fill mb-5" id="main">
+      <main className={`${styles.main} mb-5`} id="main">
         <div className="container-fluid d-flex">
-          <div className="row">
+          <div className="row flex-fill">
             {menuOpen && (
               <>
                 <div
@@ -79,6 +83,6 @@ export default function AppLayout() {
         </div>
       </main>
       <Footer />
-    </>
+    </div>
   );
 }

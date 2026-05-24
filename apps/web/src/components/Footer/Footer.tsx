@@ -1,103 +1,45 @@
-import {
-  BrFooter,
-  BrFooterCategory,
-  BrFooterItem,
-  BrFooterLegal,
-  BrFooterLogo,
-  BrFooterSocial,
-} from "@govbr-ds/webcomponents-react";
 import React from "react";
-
-interface FooterItem {
-  text: string;
-  href: string;
-}
-
-interface FooterCategory {
-  label: string;
-  items: FooterItem[];
-}
-
-interface SocialLink {
-  icon: string;
-  description: string;
-  href: string;
-}
-
-interface PartnerLogo {
-  src: string;
-  description: string;
-}
-
-interface FooterProps {
-  theme?: "light" | "dark";
-  mainLogo?: { url: string; description: string };
-  categories?: FooterCategory[];
-  socialLinks?: SocialLink[];
-  partnerLogos?: PartnerLogo[];
-  licenseText?: string;
-}
 
 const ANO_ATUAL = new Date().getFullYear();
 
-// Footer com `theme="dark"` por padrao para criar contraste visual com
-// o conteudo (sempre em superficie clara). Isso NAO e dark mode global:
-// e so a faixa inferior que ganha fundo escuro, padrao comum em layouts
-// admin (Bootstrap docs, GitHub etc.). Light mode do produto continua
-// valendo para todo o resto.
-const Footer: React.FC<FooterProps> = ({
-  theme = "dark",
-  mainLogo = {
-    url: "/brand/augustus-symbol.svg",
-    description: "Augustus - Controlador de finanças pessoais",
-  },
-  categories = [],
-  socialLinks = [],
-  partnerLogos = [],
-  licenseText = `© ${ANO_ATUAL} Augustus - Controlador de finanças pessoais.`,
-}) => {
+/**
+ * Footer enxuto do Augustus.
+ *
+ * Substitui o `BrFooter` do GovBR-DS porque o web component vinha
+ * renderizando placeholders (redes sociais, categorias) mesmo quando os
+ * slots eram passados vazios. Aqui temos controle total: marca,
+ * descricao curta do produto e linha de copyright. Sem redes sociais,
+ * sem parceiros, sem categorias inventadas.
+ *
+ * Visual: faixa escura no fim da pagina (constraste com conteudo
+ * light-mode), padrao admin. NAO e dark mode global.
+ */
+const Footer: React.FC = () => {
   return (
-    <div className="d-flex flex-wrap justify-content-evenly mt-5">
-      <BrFooter theme={theme}>
-        <BrFooterLogo
-          slot="logo"
-          src={mainLogo.url}
-          description={mainLogo.description}
-        ></BrFooterLogo>
-
-        {categories.map((category, cIdx) => (
-          <BrFooterCategory label={category.label} key={cIdx}>
-            {category.items.map((item, iIdx) => (
-              <BrFooterItem href={item.href} key={iIdx}>
-                {item.text}
-              </BrFooterItem>
-            ))}
-          </BrFooterCategory>
-        ))}
-
-        {socialLinks.map((social, sIdx) => (
-          <BrFooterSocial
-            slot="social-network"
-            href={social.href}
-            icon={social.icon}
-            description={social.description}
-            key={sIdx}
-          ></BrFooterSocial>
-        ))}
-
-        {partnerLogos.map((logoObj, pIdx) => (
-          <BrFooterLogo
-            slot="partner-logo"
-            is-partner
-            src={logoObj.src}
-            description={logoObj.description}
-            key={pIdx}
-          ></BrFooterLogo>
-        ))}
-
-        <BrFooterLegal slot="legal">{licenseText}</BrFooterLegal>
-      </BrFooter>
-    </div>
+    <footer className="augustus-footer">
+      <div className="augustus-footer__content">
+        <div className="augustus-footer__brand">
+          <img
+            src="/brand/augustus-symbol.svg"
+            alt="Augustus"
+            width={48}
+            height={48}
+            style={{ width: 48, height: 48 }}
+          />
+          <div className="augustus-footer__copy">
+            <strong className="augustus-footer__title">Augustus</strong>
+            <p className="augustus-footer__desc">
+              Controlador de finanças pessoais. Cadastre contas, cartões e
+              orçamentos, acompanhe lançamentos e parcelamentos, e visualize o
+              estado do seu dinheiro em um só lugar.
+            </p>
+          </div>
+        </div>
+        <div className="augustus-footer__legal">
+          © {ANO_ATUAL} Augustus &middot; Controlador de finanças pessoais.
+        </div>
+      </div>
+    </footer>
   );
 };
 

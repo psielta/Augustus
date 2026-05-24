@@ -57,6 +57,62 @@
 }
 
 /*
+ * Footer do admin (componente <Footer />). Faixa escura no fim da
+ * pagina contrastando com o conteudo light-mode. Nao e dark mode
+ * global — so o footer.
+ */
+.augustus-footer {
+  background: #071d41;
+  color: #fff;
+  padding: 2rem 1.5rem 1.25rem;
+  flex-shrink: 0;
+}
+
+.augustus-footer__content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.augustus-footer__brand {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.augustus-footer__copy {
+  flex: 1;
+}
+
+.augustus-footer__title {
+  display: block;
+  font-size: 1.15rem;
+  margin-bottom: 0.25rem;
+}
+
+.augustus-footer__desc {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 70ch;
+}
+
+.augustus-footer__legal {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+@media (max-width: 480px) {
+  .augustus-footer__brand {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/*
  * Mobile drawer (admin layout): ate 768px, o menu `.br-menu.push` vira
  * overlay flutuante em vez de empurrar conteudo. O backdrop captura
  * cliques fora do drawer e fecha o menu.
