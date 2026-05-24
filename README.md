@@ -318,9 +318,54 @@ Projeto Flutter clonado do template [Flutter Riverpod Clean Architecture](https:
 - Automacao mobile com `fastlane/Fastfile`
 - Plataformas presentes: Android, iOS, Web, Linux, macOS e Windows
 
-Ainda e template: o pacote continua `flutter_riverpod_clean_architecture`, o nome do app ainda e `Flutter Riverpod Clean Architecture`, a base da API ainda e `https://api.yourdomain.com` em `lib/core/constants/app_constants.dart`, e nao ha integracao real com `apps/backend`.
+Stack adicionada nesta fatia de autenticacao (acima do template):
 
-Diretriz visual do mobile: o app será sempre light mode. O template Flutter ainda possui `darkTheme` e `ThemeMode.system`, mas isso não representa a decisão do produto; ao adaptar o app para Augustus, manter apenas tema claro e não oferecer alternância para dark mode.
+- `AuthInterceptor` (injeta `Authorization: Bearer`) e `RefreshInterceptor` (`extends QueuedInterceptor`) com checagem de token obsoleto e refresh single-flight em 401.
+- `AuthTokenStorage` em `flutter_secure_storage` (decisao de produto: tokens **so** em secure storage).
+- `ProblemDetail` parser que mapeia slugs do backend (`email-nao-verificado`, `usuario-bloqueado`, etc.) para `Failure`s tipados.
+- Models Freezed (`UsuarioModel`, `TokenPairModel`, `RegistroModel`) espelhando os DTOs camelCase do backend.
+- Use cases por endpoint: `Login`, `Register`, `Logout`, `Refresh`, `Me`, `VerifyEmail`, `ResendVerification`, `RestoreSession`.
+- 4 telas: `LoginScreen`, `RegisterScreen`, `VerifyPendingScreen`, `VerifyEmailScreen` (paste-token fallback, ja que deep link foi adiado).
+- `appBootstrapProvider` no `main.dart` restaura a sessao no inicio.
+
+Ainda e template (nao alterado nesta fatia): o package Android/iOS continua `com.example.flutter_riverpod_clean_architecture` — renomeacao fica para outra fatia (ver `apps/mobile/rename_app.sh`). O `AppConstants.appName` agora e `Augustus - Controlador de finanças pessoais`.
+
+Diretriz visual do mobile: o app sera **sempre light mode**. `AppTheme.darkTheme` foi removido e `ThemeMode.light` esta fixado em `main.dart`. O provider `themeModeProvider` foi mantido por compatibilidade, mas sempre devolve light e `set()` e no-op.
+
+### Autenticacao mobile (v1)
+
+Base URL do backend Augustus, em ordem de prioridade:
+
+1. `--dart-define=API_BASE_URL=...` (qualquer plataforma).
+2. Default por plataforma em runtime, usando `kIsWeb` + `defaultTargetPlatform` (nao depende de `dart:io`, mantendo Flutter Web operacional):
+   - Android emulator: `http://10.0.2.2:8080/api`
+   - iOS sim / desktop / web: `http://localhost:8080/api`
+
+Dispositivo fisico exige passar `--dart-define=API_BASE_URL=http://<ip-da-maquina>:8080/api`.
+
+Setup do backend para o fluxo mobile funcionar end-to-end (mesmo `.env` da fatia web):
+
+```properties
+# apps/backend/.env (gitignored)
+AUGUSTUS_JWT_SECRET=...
+AUGUSTUS_MAIL_USERNAME=...
+AUGUSTUS_MAIL_PASSWORD=...
+AUGUSTUS_MAIL_FROM=...
+spring.datasource.url=jdbc:sqlite:file:./calculadora/db/calculadora-nonpro.db?date_class=TEXT&date_string_format=yyyy-MM-dd&foreign_keys=ON
+```
+
+Fluxo end-to-end:
+
+1. Abrir app -> redireciona para `/login`.
+2. Tap "Cadastrar" -> formulario -> redireciona para `/auth/verify-pending`.
+3. Abrir o email no desktop, **copiar o valor de `?token=...`** do link recebido.
+4. Voltar ao app, tap "Ja tenho o token" -> rota `/auth/verify-email` -> colar -> verificar -> redireciona para `/login?verificado=1`.
+5. Login -> tokens salvos no secure storage, `/home`.
+6. Fechar app, reabrir -> `appBootstrapProvider` faz `/auth/me`, mantem sessao.
+7. Apos `accessTokenExpiraEm` (15 min em prod), qualquer chamada autenticada dispara `RefreshInterceptor`: refresh transparente, request retentada sem o usuario perceber.
+8. Logout -> tokens limpos, volta para `/login`.
+
+Endpoints consumidos: ver secao "Autenticacao Augustus" do backend.
 
 ### Comandos
 

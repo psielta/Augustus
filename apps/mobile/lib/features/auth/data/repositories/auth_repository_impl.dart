@@ -1,160 +1,186 @@
-import 'package:fpdart/fpdart.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
-import 'package:flutter_riverpod_clean_architecture/core/error/exceptions.dart';
 import 'package:flutter_riverpod_clean_architecture/core/error/failures.dart';
-import 'package:flutter_riverpod_clean_architecture/core/providers/storage_providers.dart';
-import 'package:flutter_riverpod_clean_architecture/core/storage/local_storage_service.dart';
-import 'package:flutter_riverpod_clean_architecture/core/storage/secure_storage_service.dart';
+import 'package:flutter_riverpod_clean_architecture/core/storage/auth_token_storage.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:flutter_riverpod_clean_architecture/features/auth/data/models/user_model.dart';
-import 'package:flutter_riverpod_clean_architecture/features/auth/domain/entities/user_entity.dart';
+import 'package:flutter_riverpod_clean_architecture/features/auth/data/models/problem_detail.dart';
+import 'package:flutter_riverpod_clean_architecture/features/auth/data/models/registro_model.dart';
+import 'package:flutter_riverpod_clean_architecture/features/auth/data/models/token_pair_model.dart';
+import 'package:flutter_riverpod_clean_architecture/features/auth/domain/entities/usuario_entity.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/domain/repositories/auth_repository.dart';
+import 'package:fpdart/fpdart.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthRemoteDataSource _remoteDataSource;
-  final LocalStorageService _localStorageService;
-  final SecureStorageService _secureStorageService;
-
   AuthRepositoryImpl({
     required AuthRemoteDataSource remoteDataSource,
-    required LocalStorageService localStorageService,
-    required SecureStorageService secureStorageService,
-  }) : _remoteDataSource = remoteDataSource,
-       _localStorageService = localStorageService,
-       _secureStorageService = secureStorageService;
+    required AuthTokenStorage tokenStorage,
+  })  : _remote = remoteDataSource,
+        _tokenStorage = tokenStorage;
+
+  final AuthRemoteDataSource _remote;
+  final AuthTokenStorage _tokenStorage;
 
   @override
-  Future<Either<Failure, UserEntity>> login({
+  Future<Either<Failure, RegistroModel>> registrar({
+    required String nome,
     required String email,
-    required String password,
+    required String senha,
   }) async {
     try {
-      final response = await _remoteDataSource.login(
-        email: email,
-        password: password,
-      );
-
-      // Save user data locally
-      await _localStorageService.setObject(
-        AppConstants.userDataKey,
-        response.toJson(),
-      );
-
-      // Save auth token securely
-      await _secureStorageService.write(
-        key: AppConstants.tokenKey,
-        value: response.id, // assuming token is stored in id for demo
-      );
-
-      return Right(response.toEntity());
-    } on ServerException catch (e) {
-      return Left(ServerFailure(message: e.message));
-    } on NetworkException {
-      return const Left(NetworkFailure());
-    } on UnauthorizedException catch (e) {
-      return Left(AuthFailure(message: e.message));
-    } on Exception {
-      return const Left(ServerFailure());
+      final data = await _remote.registrar(nome: nome, email: email, senha: senha);
+      return Right(data);
+    } on DioException catch (e) {
+      return Left(_failureFromDio(e));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, UserEntity>> register({
-    required String name,
+  Future<Either<Failure, TokenPairModel>> login({
     required String email,
-    required String password,
+    required String senha,
   }) async {
     try {
-      final response = await _remoteDataSource.register(
-        name: name,
-        email: email,
-        password: password,
+      final tokens = await _remote.login(email: email, senha: senha);
+      await _tokenStorage.saveTokens(
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        accessTokenExpiraEm: tokens.accessTokenExpiraEm,
+        refreshTokenExpiraEm: tokens.refreshTokenExpiraEm,
       );
-
-      // Save user data locally
-      await _localStorageService.setObject(
-        AppConstants.userDataKey,
-        response.toJson(),
-      );
-
-      // Save auth token securely
-      await _secureStorageService.write(
-        key: AppConstants.tokenKey,
-        value: response.id, // assuming token is stored in id for demo
-      );
-
-      return Right(response.toEntity());
-    } on ServerException catch (e) {
-      return Left(ServerFailure(message: e.message));
-    } on NetworkException {
-      return const Left(NetworkFailure());
-    } on BadRequestException catch (e) {
-      return Left(ValidationFailure(message: e.message));
-    } on Exception {
-      return const Left(ServerFailure());
+      return Right(tokens);
+    } on DioException catch (e) {
+      return Left(_failureFromDio(e));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, void>> logout() async {
+    Failure? remoteFailure;
     try {
-      // Remove user data from local storage
-      await _localStorageService.remove(AppConstants.userDataKey);
+      await _remote.logout();
+    } on DioException catch (e) {
+      remoteFailure = _failureFromDio(e);
+    } catch (_) {
+      // Ignora — sempre limpamos o storage local.
+    }
+    // Logout local incondicional: mesmo se o backend falhou, o usuario
+    // pediu para sair.
+    await _tokenStorage.clear();
+    if (remoteFailure != null && remoteFailure is! UnauthorizedFailure) {
+      // 401 no logout e tratado como sucesso (a sessao ja era invalida).
+      return Left(remoteFailure);
+    }
+    return const Right(null);
+  }
 
-      // Remove auth token from secure storage
-      await _secureStorageService.delete(key: AppConstants.tokenKey);
+  @override
+  Future<Either<Failure, UsuarioEntity>> me() async {
+    try {
+      final model = await _remote.me();
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_failureFromDio(e));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
 
+  @override
+  Future<Either<Failure, void>> verificarEmail({required String token}) async {
+    try {
+      await _remote.verificarEmail(token: token);
       return const Right(null);
-    } on CacheException catch (e) {
-      return Left(CacheFailure(message: e.message));
-    } on Exception {
-      return const Left(ServerFailure());
+    } on DioException catch (e) {
+      return Left(_failureFromDio(e));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, bool>> isAuthenticated() async {
+  Future<Either<Failure, void>> reenviarVerificacao({required String email}) async {
     try {
-      final token = await _secureStorageService.read(
-        key: AppConstants.tokenKey,
-      );
-      return Right(token != null && token.isNotEmpty);
-    } on CacheException catch (e) {
-      return Left(CacheFailure(message: e.message));
-    } on Exception {
-      return const Left(ServerFailure());
+      await _remote.reenviarVerificacao(email: email);
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(_failureFromDio(e));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, UserEntity>> getCurrentUser() async {
+  Future<Either<Failure, UsuarioEntity?>> restaurarSessao() async {
+    final temRefresh = await _tokenStorage.hasRefresh();
+    if (!temRefresh) {
+      return const Right(null);
+    }
+    // Tenta /auth/me. Se o access estiver expirado, RefreshInterceptor
+    // tenta refresh transparente; se o refresh falhar, ele ja limpou o
+    // storage e o retorno aqui sera 401.
     try {
-      final userData = _localStorageService.getObject(AppConstants.userDataKey);
-
-      if (userData == null) {
-        return const Left(AuthFailure(message: 'User not found'));
+      final model = await _remote.me();
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      final failure = _failureFromDio(e);
+      // Sessao perdida: storage ja foi limpo pelo interceptor.
+      if (failure is UnauthorizedFailure ||
+          failure is RefreshTokenInvalidoFailure) {
+        return Right(null);
       }
+      return Left(failure);
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
 
-      final user = UserModel.fromJson(userData as Map<String, dynamic>);
-      return Right(user.toEntity());
-    } on CacheException catch (e) {
-      return Left(CacheFailure(message: e.message));
-    } on Exception {
-      return const Left(ServerFailure());
+  Failure _failureFromDio(DioException e) {
+    final data = e.response?.data;
+    if (data is Map<String, dynamic>) {
+      try {
+        return ProblemDetail.fromJson(data).toFailure();
+      } catch (_) {
+        // Ignora e cai no fallback.
+      }
+    }
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return const TimeoutFailure();
+      case DioExceptionType.cancel:
+        return const ServerFailure(message: 'Requisicao cancelada');
+      case DioExceptionType.connectionError:
+        return const NetworkFailure();
+      case DioExceptionType.unknown:
+        if (e.error is Object &&
+            e.error.toString().contains('SocketException')) {
+          return const NetworkFailure();
+        }
+        return ServerFailure(
+          message: 'Erro no servidor',
+          statusCode: e.response?.statusCode,
+        );
+      case DioExceptionType.badCertificate:
+        return const ServerFailure(message: 'Certificado invalido');
+      case DioExceptionType.badResponse:
+        return ServerFailure(
+          message: 'Erro no servidor',
+          statusCode: e.response?.statusCode,
+        );
     }
   }
 }
 
-final secureStorageServiceProvider = Provider<SecureStorageService>((ref) {
-  return SecureStorageService.create();
-});
+// Provider -----------------------------------------------------------------
 
-// Repository provider
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(
     remoteDataSource: ref.watch(authRemoteDataSourceProvider),
-    localStorageService: ref.watch(localStorageServiceProvider),
-    secureStorageService: ref.watch(secureStorageServiceProvider),
+    tokenStorage: ref.watch(authTokenStorageProvider),
   );
 });

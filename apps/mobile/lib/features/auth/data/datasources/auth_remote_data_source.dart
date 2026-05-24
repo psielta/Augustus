@@ -1,125 +1,95 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod_clean_architecture/core/error/exceptions.dart';
 import 'package:flutter_riverpod_clean_architecture/core/network/api_client.dart';
 import 'package:flutter_riverpod_clean_architecture/core/providers/network_providers.dart';
-import 'package:flutter_riverpod_clean_architecture/core/utils/app_utils.dart';
-import 'package:flutter_riverpod_clean_architecture/features/auth/data/models/user_model.dart';
+import 'package:flutter_riverpod_clean_architecture/features/auth/data/models/registro_model.dart';
+import 'package:flutter_riverpod_clean_architecture/features/auth/data/models/token_pair_model.dart';
+import 'package:flutter_riverpod_clean_architecture/features/auth/data/models/usuario_model.dart';
 
 abstract class AuthRemoteDataSource {
-  /// Login a user with email and password
-  Future<UserModel> login({required String email, required String password});
-
-  /// Register a new user
-  Future<UserModel> register({
-    required String name,
+  Future<RegistroModel> registrar({
+    required String nome,
     required String email,
-    required String password,
+    required String senha,
   });
+
+  Future<TokenPairModel> login({
+    required String email,
+    required String senha,
+  });
+
+  Future<void> logout();
+
+  Future<UsuarioModel> me();
+
+  Future<void> verificarEmail({required String token});
+
+  Future<void> reenviarVerificacao({required String email});
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  // final ApiClient _apiClient;
+  AuthRemoteDataSourceImpl(this._dio);
 
-  AuthRemoteDataSourceImpl(/*this._apiClient*/);
+  final Dio _dio;
 
   @override
-  Future<UserModel> login({
+  Future<RegistroModel> registrar({
+    required String nome,
     required String email,
-    required String password,
+    required String senha,
   }) async {
-    try {
-      // Check network connection
-      final hasNetwork = await AppUtils.hasNetworkConnection();
-      if (!hasNetwork) {
-        throw NetworkException();
-      }
-
-      // In a real app, you would make an API call here
-      // For this template, we'll simulate a successful login
-
-      // Simulating a backend call with delay
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Create a mock user for demonstration
-      return UserModel(
-        id: 'user-123',
-        name: 'John Doe',
-        email: email,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      // In real implementation:
-      // final response = await _apiClient.post('/auth/login', data: {
-      //   'email': email,
-      //   'password': password,
-      // });
-      // return UserModel.fromJson(response['user']);
-    } on Exception catch (e) {
-      throw _handleException(e);
-    }
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/auth/register',
+      data: {'nome': nome, 'email': email, 'senha': senha},
+    );
+    return RegistroModel.fromJson(response.data!);
   }
 
   @override
-  Future<UserModel> register({
-    required String name,
+  Future<TokenPairModel> login({
     required String email,
-    required String password,
+    required String senha,
   }) async {
-    try {
-      // Check network connection
-      final hasNetwork = await AppUtils.hasNetworkConnection();
-      if (!hasNetwork) {
-        throw NetworkException();
-      }
-
-      // In a real app, you would make an API call here
-      // For this template, we'll simulate a successful registration
-
-      // Simulating a backend call with delay
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Create a mock user for demonstration
-      return UserModel(
-        id: 'user-${DateTime.now().millisecondsSinceEpoch}',
-        name: name,
-        email: email,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      // In real implementation:
-      // final response = await _apiClient.post('/auth/register', data: {
-      //   'name': name,
-      //   'email': email,
-      //   'password': password,
-      // });
-      // return UserModel.fromJson(response['user']);
-    } on Exception catch (e) {
-      throw _handleException(e);
-    }
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/auth/login',
+      data: {'email': email, 'senha': senha},
+    );
+    return TokenPairModel.fromJson(response.data!);
   }
 
-  // Helper method to handle exceptions
-  Exception _handleException(Exception e) {
-    if (e is NetworkException ||
-        e is ServerException ||
-        e is UnauthorizedException ||
-        e is BadRequestException) {
-      return e;
-    }
-    return ServerException(message: e.toString());
+  @override
+  Future<void> logout() async {
+    await _dio.post<void>('/auth/logout');
+  }
+
+  @override
+  Future<UsuarioModel> me() async {
+    final response = await _dio.get<Map<String, dynamic>>('/auth/me');
+    return UsuarioModel.fromJson(response.data!);
+  }
+
+  @override
+  Future<void> verificarEmail({required String token}) async {
+    await _dio.post<void>('/auth/verify-email', data: {'token': token});
+  }
+
+  @override
+  Future<void> reenviarVerificacao({required String email}) async {
+    await _dio.post<void>(
+      '/auth/resend-verification',
+      data: {'email': email},
+    );
   }
 }
 
-// Provider
+// Providers ----------------------------------------------------------------
+
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
-  // final apiClient = ref.watch(apiClientProvider);
-  return AuthRemoteDataSourceImpl(/*apiClient*/);
+  return AuthRemoteDataSourceImpl(ref.watch(dioProvider));
 });
 
-// ApiClient provider
+/// Convenience: client generico autodispose, mantido aqui por compatibilidade
+/// com codigo legado que possa estar lendo `apiClientProvider`.
 final apiClientProvider = Provider.autoDispose<ApiClient>((ref) {
-  final dio = ref.watch(dioProvider);
-  return ApiClient(dio);
+  return ApiClient(ref.watch(dioProvider));
 });
