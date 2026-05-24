@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
+import 'package:flutter_riverpod_clean_architecture/core/providers/menu_open_provider.dart';
 import 'package:flutter_riverpod_clean_architecture/core/utils/app_utils.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/domain/entities/usuario_entity.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
@@ -38,46 +39,66 @@ class AppShell extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final usuario = authState.usuario;
     final isWide = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+    // `menuOpen` so vale em viewport largo. Em phone o drawer e modal e
+    // o estado e efemero (Scaffold gerencia).
+    final menuOpen = isWide ? ref.watch(menuOpenProvider) : false;
 
-    final appBar = AppBar(
-      title: Text(title),
-      actions: [
-        ...?actions,
-        if (usuario != null)
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: Text(
-                'Olá, ${usuario.nome}',
-                style: const TextStyle(fontSize: 14),
-                overflow: TextOverflow.ellipsis,
+    Widget acoesAposActions() {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (usuario != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: Text(
+                  'Olá, ${usuario.nome}',
+                  style: const TextStyle(fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sair',
+            onPressed: () => _confirmarSair(context, ref),
           ),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          tooltip: 'Sair',
-          onPressed: () => _confirmarSair(context, ref),
-        ),
-      ],
-    );
+        ],
+      );
+    }
 
     if (isWide) {
-      // Drawer permanente em telas largas: sem hamburger automatico,
-      // sem modal — o drawer fica colado a esquerda do conteudo.
+      // Em telas largas, controlamos o leading manualmente porque nao
+      // ha Scaffold.drawer (drawer e renderizado como Row child). O
+      // hamburger toggla a sidebar permanente via menuOpenProvider e
+      // persiste a preferencia em SharedPreferences.
       return Scaffold(
-        appBar: appBar,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.menu),
+            tooltip: menuOpen ? 'Recolher menu' : 'Abrir menu',
+            onPressed: () => ref.read(menuOpenProvider.notifier).toggle(),
+          ),
+          title: Text(title),
+          actions: [
+            ...?actions,
+            acoesAposActions(),
+          ],
+        ),
         body: SafeArea(
           child: Row(
             children: [
-              SizedBox(
-                width: 280,
-                child: _AugustusDrawer(
-                  usuario: usuario,
-                  onNavigate: (rota) => _navegar(context, rota, fechar: false),
+              if (menuOpen) ...[
+                SizedBox(
+                  width: 280,
+                  child: _AugustusDrawer(
+                    usuario: usuario,
+                    onNavigate: (rota) =>
+                        _navegar(context, rota, fechar: false),
+                  ),
                 ),
-              ),
-              const VerticalDivider(width: 1, thickness: 1),
+                const VerticalDivider(width: 1, thickness: 1),
+              ],
               Expanded(child: child),
             ],
           ),
@@ -85,10 +106,16 @@ class AppShell extends ConsumerWidget {
       );
     }
 
-    // Phone: drawer modal padrao do Scaffold — Flutter ja injeta o
-    // hamburger no AppBar automaticamente quando `drawer` esta presente.
+    // Phone: drawer modal padrao do Scaffold — Flutter injeta o
+    // hamburger no AppBar automaticamente. Nao tocamos no leading.
     return Scaffold(
-      appBar: appBar,
+      appBar: AppBar(
+        title: Text(title),
+        actions: [
+          ...?actions,
+          acoesAposActions(),
+        ],
+      ),
       drawer: _AugustusDrawer(
         usuario: usuario,
         onNavigate: (rota) => _navegar(context, rota, fechar: true),
