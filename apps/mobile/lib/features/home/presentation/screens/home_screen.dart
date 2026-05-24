@@ -12,7 +12,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch auth state to get current user
     final authState = ref.watch(authProvider);
-    final user = authState.user;
+    final user = authState.usuario;
 
     return Scaffold(
       appBar: AppBar(
@@ -80,8 +80,8 @@ class HomeScreen extends ConsumerWidget {
                               context,
                             ).colorScheme.primary,
                             child: Text(
-                              user.name.isNotEmpty
-                                  ? user.name.substring(0, 1).toUpperCase()
+                              user.nome.isNotEmpty
+                                  ? user.nome.substring(0, 1).toUpperCase()
                                   : 'U',
                               style: const TextStyle(
                                 fontSize: 24,
@@ -96,7 +96,7 @@ class HomeScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  user.name,
+                                  user.nome,
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,

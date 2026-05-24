@@ -1,128 +1,205 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod_clean_architecture/features/auth/domain/entities/user_entity.dart';
+import 'package:flutter_riverpod_clean_architecture/core/error/failures.dart';
+import 'package:flutter_riverpod_clean_architecture/features/auth/domain/entities/usuario_entity.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/providers/auth_providers.dart';
 
-// Auth state
-class AuthState {
-  final bool isAuthenticated;
+/// Estado da sessao de autenticacao.
+enum AuthStatus { inicializando, anonimo, autenticado }
+
+class AuthState extends Equatable {
+  final AuthStatus status;
+  final UsuarioEntity? usuario;
   final bool isLoading;
-  final UserEntity? user;
-  final String? errorMessage;
+  final Failure? lastFailure;
+
+  /// Sinaliza que o backend devolveu `EMAIL_NAO_VERIFICADO` ou que o cadastro
+  /// foi recem-criado e o usuario precisa verificar antes de logar.
+  final bool precisaVerificarEmail;
+  final String? emailEmVerificacao;
 
   const AuthState({
-    this.isAuthenticated = false,
+    this.status = AuthStatus.inicializando,
+    this.usuario,
     this.isLoading = false,
-    this.user,
-    this.errorMessage,
+    this.lastFailure,
+    this.precisaVerificarEmail = false,
+    this.emailEmVerificacao,
   });
 
+  bool get isAuthenticated => status == AuthStatus.autenticado;
+  String? get errorMessage => lastFailure?.message;
+
   AuthState copyWith({
-    bool? isAuthenticated,
+    AuthStatus? status,
+    UsuarioEntity? usuario,
+    bool? usuarioNull,
     bool? isLoading,
-    UserEntity? user,
-    String? errorMessage,
+    Failure? lastFailure,
+    bool? lastFailureNull,
+    bool? precisaVerificarEmail,
+    String? emailEmVerificacao,
+    bool? emailEmVerificacaoNull,
   }) {
     return AuthState(
-      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      status: status ?? this.status,
+      usuario: (usuarioNull ?? false) ? null : (usuario ?? this.usuario),
       isLoading: isLoading ?? this.isLoading,
-      user: user ?? this.user,
-      errorMessage: errorMessage,
+      lastFailure:
+          (lastFailureNull ?? false) ? null : (lastFailure ?? this.lastFailure),
+      precisaVerificarEmail:
+          precisaVerificarEmail ?? this.precisaVerificarEmail,
+      emailEmVerificacao: (emailEmVerificacaoNull ?? false)
+          ? null
+          : (emailEmVerificacao ?? this.emailEmVerificacao),
     );
   }
+
+  @override
+  List<Object?> get props => [
+        status,
+        usuario,
+        isLoading,
+        lastFailure,
+        precisaVerificarEmail,
+        emailEmVerificacao,
+      ];
 }
 
-// Auth notifier
-// Auth notifier
 class AuthNotifier extends Notifier<AuthState> {
   @override
-  AuthState build() {
-    return const AuthState();
-  }
+  AuthState build() => const AuthState();
 
-  // Check auth status
-  Future<void> checkAuthStatus() async {
-    // Here you would typically check if there's a valid token stored
-    // and validate it with your API if necessary
-
-    // For now, we'll just return false
-    state = state.copyWith(isAuthenticated: false, user: null);
-  }
-
-  // Login
-  Future<void> login({required String email, required String password}) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
-
-    final loginUseCase = ref.read(loginUseCaseProvider);
-    final result = await loginUseCase.execute(email: email, password: password);
-
+  /// Restaura a sessao no bootstrap. Idempotente.
+  Future<void> inicializar() async {
+    state = state.copyWith(
+      status: AuthStatus.inicializando,
+      isLoading: true,
+      lastFailureNull: true,
+    );
+    final result = await ref.read(restoreSessionUseCaseProvider).execute();
     result.fold(
       (failure) => state = state.copyWith(
+        status: AuthStatus.anonimo,
+        usuarioNull: true,
         isLoading: false,
-        isAuthenticated: false,
-        errorMessage: failure.message,
+        lastFailure: failure,
       ),
-      (user) => state = state.copyWith(
+      (usuario) => state = state.copyWith(
+        status: usuario == null ? AuthStatus.anonimo : AuthStatus.autenticado,
+        usuario: usuario,
+        usuarioNull: usuario == null,
         isLoading: false,
-        isAuthenticated: true,
-        user: user,
-        errorMessage: null,
+        lastFailureNull: true,
       ),
     );
   }
 
-  // Register
-  Future<void> register({
-    required String name,
+  Future<void> registrar({
+    required String nome,
     required String email,
-    required String password,
+    required String senha,
   }) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
-
-    final registerUseCase = ref.read(registerUseCaseProvider);
-    final result = await registerUseCase.execute(
-      name: name,
-      email: email,
-      password: password,
-    );
-
+    state = state.copyWith(isLoading: true, lastFailureNull: true);
+    final result = await ref
+        .read(registerUseCaseProvider)
+        .execute(nome: nome, email: email, senha: senha);
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        isAuthenticated: false,
-        errorMessage: failure.message,
+        lastFailure: failure,
       ),
-      (user) => state = state.copyWith(
+      (registro) => state = state.copyWith(
         isLoading: false,
-        isAuthenticated: true,
-        user: user,
-        errorMessage: null,
+        status: AuthStatus.anonimo,
+        precisaVerificarEmail: true,
+        emailEmVerificacao: registro.usuario.email,
+        lastFailureNull: true,
       ),
     );
   }
 
-  // Logout
+  Future<void> login({required String email, required String senha}) async {
+    state = state.copyWith(isLoading: true, lastFailureNull: true);
+    final loginResult = await ref
+        .read(loginUseCaseProvider)
+        .execute(email: email, senha: senha);
+
+    await loginResult.fold(
+      (failure) async {
+        state = state.copyWith(
+          isLoading: false,
+          lastFailure: failure,
+          precisaVerificarEmail: failure is EmailNaoVerificadoFailure,
+          emailEmVerificacao:
+              failure is EmailNaoVerificadoFailure ? email : null,
+        );
+      },
+      (_) async {
+        // Login OK — tokens salvos pelo repository. Agora busca o usuario.
+        final meResult = await ref.read(getCurrentUserUseCaseProvider).execute();
+        meResult.fold(
+          (failure) => state = state.copyWith(
+            isLoading: false,
+            status: AuthStatus.anonimo,
+            lastFailure: failure,
+          ),
+          (usuario) => state = state.copyWith(
+            status: AuthStatus.autenticado,
+            usuario: usuario,
+            isLoading: false,
+            precisaVerificarEmail: false,
+            emailEmVerificacaoNull: true,
+            lastFailureNull: true,
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> logout() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, lastFailureNull: true);
+    await ref.read(logoutUseCaseProvider).execute();
+    state = const AuthState(status: AuthStatus.anonimo);
+  }
 
-    final logoutUseCase = ref.read(logoutUseCaseProvider);
-    final result = await logoutUseCase.execute();
-
+  Future<void> verificarEmail({required String token}) async {
+    state = state.copyWith(isLoading: true, lastFailureNull: true);
+    final result = await ref
+        .read(verifyEmailUseCaseProvider)
+        .execute(token: token);
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        errorMessage: failure.message,
+        lastFailure: failure,
       ),
       (_) => state = state.copyWith(
         isLoading: false,
-        isAuthenticated: false,
-        user: null,
-        errorMessage: null,
+        precisaVerificarEmail: false,
+        emailEmVerificacaoNull: true,
+        lastFailureNull: true,
+      ),
+    );
+  }
+
+  Future<void> reenviarVerificacao({required String email}) async {
+    state = state.copyWith(isLoading: true, lastFailureNull: true);
+    final result = await ref
+        .read(resendVerificationUseCaseProvider)
+        .execute(email: email);
+    result.fold(
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        lastFailure: failure,
+      ),
+      (_) => state = state.copyWith(
+        isLoading: false,
+        lastFailureNull: true,
       ),
     );
   }
 }
 
-// Auth provider
 final authProvider = NotifierProvider<AuthNotifier, AuthState>(
   AuthNotifier.new,
 );

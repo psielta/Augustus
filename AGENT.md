@@ -335,16 +335,31 @@ Stack real:
 - `fastlane/Fastfile`
 - Plataformas: Android, iOS, Web, Linux, macOS e Windows
 
-Ainda e template:
+Stack adicionada na fatia de autenticacao:
+
+- `AuthInterceptor` (`Interceptor`) e `RefreshInterceptor` (`QueuedInterceptor`, Dio 5) em `lib/core/network/interceptors/`.
+- `refreshDioProvider` (Dio limpo so para `/auth/refresh`).
+- `AuthTokenStorage` em `lib/core/storage/auth_token_storage.dart`, wrapper sobre `SecureStorageService` — tokens **so** em `flutter_secure_storage`.
+- Models Freezed: `UsuarioModel`, `TokenPairModel`, `RegistroModel`, ProblemDetail (sem Freezed).
+- Enums: `StatusUsuario`, `PapelSistema`, `TipoToken` com `@JsonValue`.
+- Use cases: `Login`, `Register`, `Logout`, `Refresh`, `Me`, `VerifyEmail`, `ResendVerification`, `RestoreSession`.
+- 4 telas: `LoginScreen`, `RegisterScreen`, `VerifyPendingScreen`, `VerifyEmailScreen`.
+- `appBootstrapProvider` no `main.dart` restaura sessao no startup.
+- Base URL via `--dart-define=API_BASE_URL=...` com fallback runtime usando `kIsWeb` + `defaultTargetPlatform` (sem `dart:io`).
+
+Ja consolidado nesta fatia (nao mais "template"):
+
+- `AppConstants.appName` agora e `Augustus - Controlador de finanças pessoais`.
+- `AppConstants.apiBaseUrl` resolve para o backend Augustus por padrao (10.0.2.2 em Android emulator, localhost no resto).
+- `darkTheme` removido; `MaterialApp.router` sem `darkTheme` nem `themeMode`. `themeModeProvider` mantido com `set()` no-op.
+- Feature `auth` totalmente substituida: data source mock deletado, repository real consumindo `/api/auth/*`.
+
+Ainda e template (fora do escopo desta fatia):
 
 - Package atual: `flutter_riverpod_clean_architecture`.
-- `AppConstants.appName` ainda e `Flutter Riverpod Clean Architecture`.
-- Display name futuro: `Augustus - Controlador de finanças pessoais`.
-- `AppConstants.apiBaseUrl` aponta para `https://api.yourdomain.com`.
-- Android namespace/applicationId ainda usa `com.ssoad.flutter_riverpod_clean_architecture`.
-- O template ainda tem `darkTheme` e `ThemeMode.system`; o produto deve ser sempre light mode.
-- Features `auth`, `chat`, `survey`, `home`, `settings`, demos e showcase ainda sao exemplos.
-- Nao ha integracao real com `apps/backend`.
+- Android namespace/applicationId ainda `com.example.flutter_riverpod_clean_architecture`. Renomear via `apps/mobile/rename_app.sh`.
+- Features `chat`, `survey`, `home`, `settings`, demos e showcase continuam exemplos do template.
+- Deep link / app link / universal link para `/auth/verify-email` nao implementado — UX usa "colar token" como fallback.
 
 Comandos, a partir de `apps/mobile`:
 
@@ -452,7 +467,12 @@ features/<feature>/
 - Nao introduzir `NgModule` em `apps/web`.
 - Nao substituir GovBR-DS por outra biblioteca visual sem decisao explicita.
 - Nao remover CDNs de Rawline/Raleway/Font Awesome em `apps/web/src/index.html` sem substituto.
-- Nao tratar as features Flutter de exemplo (`auth`, `chat`, `survey`) como dominio final do Augustus.
+- Nao tratar as features Flutter de exemplo (`chat`, `survey`) como dominio final do Augustus. A feature `auth` ja foi substituida por integracao real com o backend.
+- Em `apps/mobile`, nao guardar `accessToken`/`refreshToken` em `shared_preferences`, `Hive` ou cache em memoria; somente `flutter_secure_storage` via `AuthTokenStorage`.
+- Em `apps/mobile`, o `RefreshInterceptor` nao pode depender de `authProvider`, `authRepositoryProvider` ou qualquer outro provider de UI/dominio — so `AuthTokenStorage` e `refreshDioProvider`.
+- Em `apps/mobile`, nao usar `dart:io` em arquivos compartilhados (`AppConstants`, providers) para detectar plataforma; usar `kIsWeb` + `defaultTargetPlatform` de `package:flutter/foundation.dart` para nao quebrar Flutter Web.
+- Em `apps/mobile`, nao reintroduzir `darkTheme` em `AppTheme` nem `ThemeMode.system`/`dark` em `main.dart`.
+- Em `apps/mobile`, nao logar `Authorization` header — `LogInterceptor` esta com `requestHeader: false` e `responseHeader: false`.
 
 ## Verificacao por tipo de mudanca
 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
 import 'package:flutter_riverpod_clean_architecture/core/utils/app_utils.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -30,44 +30,40 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  void _register() async {
-    if (_formKey.currentState!.validate()) {
-      // Close keyboard
-      FocusScope.of(context).unfocus();
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
+    final nome = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final senha = _passwordController.text;
 
-      // Get form values
-      final name = _nameController.text.trim();
-      final email = _emailController.text.trim();
-      final password = _passwordController.text;
+    await ref
+        .read(authProvider.notifier)
+        .registrar(nome: nome, email: email, senha: senha);
 
-      // Call register method from auth provider
-      await ref
-          .read(authProvider.notifier)
-          .register(name: name, email: email, password: password);
-
-      // Check if registration was successful
-      final authState = ref.read(authProvider);
-      if (authState.errorMessage != null) {
-        // Show error message if registration failed
-        if (!mounted) return;
-
-        // ignore: use_build_context_synchronously
-        AppUtils.showSnackBar(
-          context,
-          message: authState.errorMessage!,
-          backgroundColor: Theme.of(context).colorScheme.error,
-        );
-      }
+    if (!mounted) return;
+    final authState = ref.read(authProvider);
+    if (authState.lastFailure != null) {
+      AppUtils.showSnackBar(
+        context,
+        message: authState.lastFailure!.message,
+        backgroundColor: Theme.of(context).colorScheme.error,
+      );
+      return;
+    }
+    if (authState.precisaVerificarEmail) {
+      context.go(
+        '${AppConstants.verifyPendingRoute}?email=${Uri.encodeQueryComponent(email)}',
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Watch auth state
     final authState = ref.watch(authProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(title: const Text('Criar conta')),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Center(
@@ -75,38 +71,31 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: Form(
               key: _formKey,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.flutter_dash, size: 80, color: Colors.blue),
+                  const Icon(Icons.person_add_alt_1,
+                      size: 72, color: Colors.blue),
                   const SizedBox(height: 24),
                   const Text(
-                    'Create Account',
+                    'Criar conta no Augustus',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style:
+                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Register to get started',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
                   TextFormField(
                     controller: _nameController,
+                    autofillHints: const [AutofillHints.name],
                     decoration: const InputDecoration(
-                      labelText: 'Name',
-                      hintText: 'Enter your full name',
+                      labelText: 'Nome completo',
                       prefixIcon: Icon(Icons.person_outline),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your name';
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Informe seu nome';
+                      }
+                      if (value.trim().length > 120) {
+                        return 'Maximo 120 caracteres';
                       }
                       return null;
                     },
@@ -115,17 +104,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
                     decoration: const InputDecoration(
                       labelText: 'Email',
-                      hintText: 'Enter your email',
                       prefixIcon: Icon(Icons.email_outlined),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Informe seu email';
                       }
-                      if (!AppUtils.isValidEmail(value)) {
-                        return 'Please enter a valid email';
+                      if (!AppUtils.isValidEmail(value.trim())) {
+                        return 'Email invalido';
                       }
                       return null;
                     },
@@ -134,29 +123,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
+                    autofillHints: const [AutofillHints.newPassword],
                     decoration: InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Enter your password',
+                      labelText: 'Senha',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isPasswordVisible = !_isPasswordVisible;
-                          });
-                        },
+                        icon: Icon(_isPasswordVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () => setState(
+                            () => _isPasswordVisible = !_isPasswordVisible),
                       ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
+                        return 'Informe uma senha';
                       }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters long';
+                      if (value.length < 8) {
+                        return 'Minimo 8 caracteres';
+                      }
+                      if (value.length > 128) {
+                        return 'Maximo 128 caracteres';
                       }
                       return null;
                     },
@@ -166,29 +153,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     controller: _confirmPasswordController,
                     obscureText: !_isConfirmPasswordVisible,
                     decoration: InputDecoration(
-                      labelText: 'Confirm Password',
-                      hintText: 'Confirm your password',
+                      labelText: 'Confirmar senha',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          _isConfirmPasswordVisible
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
+                        icon: Icon(_isConfirmPasswordVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () => setState(() =>
                             _isConfirmPasswordVisible =
-                                !_isConfirmPasswordVisible;
-                          });
-                        },
+                                !_isConfirmPasswordVisible),
                       ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please confirm your password';
+                        return 'Confirme sua senha';
                       }
                       if (value != _passwordController.text) {
-                        return 'Passwords do not match';
+                        return 'As senhas nao coincidem';
                       }
                       return null;
                     },
@@ -198,8 +179,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     onPressed: authState.isLoading ? null : _register,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.primary,
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onPrimary,
                     ),
                     child: authState.isLoading
                         ? const SizedBox(
@@ -210,25 +193,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Register'),
+                        : const Text('Cadastrar'),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        'Already have an account?',
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                        ),
-                      ),
+                      const Text('Ja tem conta?'),
                       TextButton(
-                        onPressed: () {
-                          context.go(AppConstants.loginRoute);
-                        },
-                        child: const Text('Login'),
+                        onPressed: () => context.go(AppConstants.loginRoute),
+                        child: const Text('Entrar'),
                       ),
                     ],
                   ),

@@ -1,6 +1,8 @@
-import 'package:fpdart/fpdart.dart';
 import 'dart:async';
+
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod_clean_architecture/features/auth/data/models/problem_detail.dart';
+import 'package:fpdart/fpdart.dart';
 import '../../core/error/failures.dart';
 
 class ApiClient {
@@ -8,7 +10,6 @@ class ApiClient {
 
   ApiClient(this._dio);
 
-  // GET request
   Future<Either<Failure, dynamic>> get(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -21,7 +22,6 @@ class ApiClient {
     }
   }
 
-  // POST request
   Future<Either<Failure, dynamic>> post(String path, {dynamic data}) async {
     try {
       final response = await _dio.post(path, data: data);
@@ -31,7 +31,6 @@ class ApiClient {
     }
   }
 
-  // PUT request
   Future<Either<Failure, dynamic>> put(String path, {dynamic data}) async {
     try {
       final response = await _dio.put(path, data: data);
@@ -41,7 +40,6 @@ class ApiClient {
     }
   }
 
-  // DELETE request
   Future<Either<Failure, dynamic>> delete(String path) async {
     try {
       final response = await _dio.delete(path);
@@ -51,62 +49,42 @@ class ApiClient {
     }
   }
 
-  // Handle Dio errors
+  /// Mapeia erro Dio para `Failure`, priorizando o body em formato
+  /// `application/problem+json` que o backend Augustus retorna (RFC 7807).
   Failure _handleError(DioException e) {
+    // Timeouts e cancel
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return const ServerFailure(message: 'Connection timeout');
-      case DioExceptionType.badResponse:
-        switch (e.response?.statusCode) {
-          case 400:
-            return ServerFailure(
-              message: e.response?.data['message'] ?? 'Bad Request',
-            );
-          case 401:
-            return UnauthorizedFailure(
-              message: e.response?.data['message'] ?? 'Unauthorized',
-            );
-          case 403:
-            return ServerFailure(
-              message: e.response?.data['message'] ?? 'Forbidden',
-            );
-          case 404:
-            return ServerFailure(
-              message: e.response?.data['message'] ?? 'Not Found',
-            );
-          case 500:
-          case 501:
-          case 502:
-          case 503:
-            return ServerFailure(
-              message: e.response?.data['message'] ?? 'Server Error',
-            );
-          default:
-            return ServerFailure(
-              message: e.response?.data['message'] ?? 'Unknown error occurred',
-            );
-        }
+        return const TimeoutFailure();
       case DioExceptionType.cancel:
-        return const ServerFailure(message: 'Request cancelled');
+        return const ServerFailure(message: 'Requisicao cancelada');
+      case DioExceptionType.connectionError:
+        return const NetworkFailure();
       case DioExceptionType.unknown:
-        if (e.error.toString().contains('SocketException')) {
-          return const ServerFailure(message: 'No internet connection');
+        if (e.error is Object && e.error.toString().contains('SocketException')) {
+          return const NetworkFailure();
         }
-        return const ServerFailure(message: 'Unknown error occurred');
-      default:
-        return const ServerFailure(message: 'Unknown error occurred');
+        break;
+      case DioExceptionType.badCertificate:
+        return const ServerFailure(message: 'Certificado invalido');
+      case DioExceptionType.badResponse:
+        break;
     }
-  }
 
-  // Add token to headers
-  void setToken(String token) {
-    _dio.options.headers['Authorization'] = 'Bearer $token';
-  }
-
-  // Remove token from headers
-  void removeToken() {
-    _dio.options.headers.remove('Authorization');
+    // badResponse ou unknown com response: tentar parsear ProblemDetail
+    final data = e.response?.data;
+    if (data is Map<String, dynamic>) {
+      try {
+        return ProblemDetail.fromJson(data).toFailure();
+      } catch (_) {
+        // Cai para o fallback abaixo.
+      }
+    }
+    return ServerFailure(
+      message: 'Erro no servidor',
+      statusCode: e.response?.statusCode,
+    );
   }
 }
