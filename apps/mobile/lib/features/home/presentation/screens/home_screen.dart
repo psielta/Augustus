@@ -1,291 +1,113 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod_clean_architecture/core/utils/app_utils.dart';
+import 'package:flutter_riverpod_clean_architecture/core/ui/app_shell.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
-import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
 
+/// Tela inicial do admin: card de boas-vindas com o nome/email do usuario
+/// e placeholder do dashboard financeiro (a ser implementado em fatias
+/// futuras seguindo o blueprint em
+/// `docs/database/blueprints/2026-05-23-augustus-multiusuario/`).
+///
+/// O chrome (AppBar com saudacao + Sair, Drawer com navegacao, rodape)
+/// vem do [AppShell] e nao precisa ser definido aqui.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch auth state to get current user
-    final authState = ref.watch(authProvider);
-    final user = authState.usuario;
+    final usuario = ref.watch(authProvider).usuario;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              // Show confirmation dialog
-              final shouldLogout = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Logout'),
-                  content: const Text('Are you sure you want to logout?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text('Logout'),
-                    ),
-                  ],
-                ),
-              );
-
-              // Logout if user confirmed
-              if (shouldLogout == true) {
-                await ref.read(authProvider.notifier).logout();
-
-                if (ref.read(authProvider).errorMessage != null) {
-                  if (context.mounted) {
-                    AppUtils.showSnackBar(
-                      context,
-                      message: ref.read(authProvider).errorMessage!,
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                    );
-                  }
-                }
-              }
-            },
-          ),
-        ],
-      ),
-      body: user == null
+    return AppShell(
+      title: 'Início',
+      child: usuario == null
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: () async {
-                // Add refresh logic here if needed
-              },
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // User profile card
-                  Card(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primary,
-                            child: Text(
-                              user.nome.isNotEmpty
-                                  ? user.nome.substring(0, 1).toUpperCase()
-                                  : 'U',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  user.nome,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  user.email,
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.color
-                                        ?.withValues(alpha: 0.7),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () {
-                              // Add edit profile logic
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Features section
-                  const Text(
-                    'Features',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Feature tiles
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1.2,
-                    children: [
-                      _buildFeatureTile(
-                        context,
-                        icon: Icons.post_add,
-                        title: 'Posts',
-                        color: Colors.blue,
-                        onTap: () {},
-                      ),
-                      _buildFeatureTile(
-                        context,
-                        icon: Icons.photo_library,
-                        title: 'Photos',
-                        color: Colors.green,
-                        onTap: () {},
-                      ),
-                      _buildFeatureTile(
-                        context,
-                        icon: Icons.assignment,
-                        title: 'Survey',
-                        color: Colors.orange,
-                        onTap: () {
-                          context.push(AppConstants.surveyRoute);
-                        },
-                      ),
-                      _buildFeatureTile(
-                        context,
-                        icon: Icons.chat_bubble_outline,
-                        title: 'Live Chat',
-                        color: Colors.purple,
-                        onTap: () {
-                          context.push(AppConstants.chatRoute);
-                        },
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Information section
-                  const Text(
-                    'About this app',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Flutter Riverpod Clean Architecture',
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 28,
+                          backgroundColor: colorScheme.primary,
+                          child: Text(
+                            usuario.nome.isNotEmpty
+                                ? usuario.nome.substring(0, 1).toUpperCase()
+                                : 'U',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
+                              color: colorScheme.onPrimary,
                             ),
                           ),
-                          SizedBox(height: 8),
-                          Text(
-                            'This is a template project built with Flutter, Riverpod, and Go Router following Clean Architecture principles. It includes authentication, navigation, theme support, and more.',
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Technologies used:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Chip(label: Text('Flutter')),
-                              Chip(label: Text('Riverpod')),
-                              Chip(label: Text('GoRouter')),
-                              Chip(label: Text('Clean Architecture')),
-                              Chip(label: Text('Dio')),
-                              Chip(label: Text('Freezed')),
+                              Text(
+                                'Olá, ${usuario.nome}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                usuario.email,
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color
+                                      ?.withValues(alpha: 0.7),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explore'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-        onTap: (index) {
-          // Handle navigation
-          if (index != 0) {
-            AppUtils.showSnackBar(
-              context,
-              message: 'This feature is not implemented yet',
-            );
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildFeatureTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: 2,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 40, color: color),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.account_balance_wallet,
+                          size: 48,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Dashboard financeiro em breve',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Em breve você poderá cadastrar contas, cartões e '
+                          'orçamentos, acompanhar lançamentos e parcelamentos, '
+                          'e visualizar o estado do seu dinheiro em um só lugar.',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
