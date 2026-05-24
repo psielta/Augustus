@@ -22,8 +22,11 @@ const Header = ({ onToggleMenu }: HeaderProps) => {
           <div className="header-logo">
             <a href="/">
               <img
-                src="/brand/augustus-logo.svg"
-                alt="Augustus - Controlador de finanças pessoais"
+                src="/brand/augustus-symbol.svg"
+                alt="Augustus"
+                width={40}
+                height={40}
+                style={{ width: 40, height: 40 }}
               />
             </a>
             <span className="br-divider vertical"></span>

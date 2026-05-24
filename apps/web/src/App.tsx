@@ -24,7 +24,16 @@ function App() {
       <main className="d-flex flex-fill mb-5" id="main">
         <div className="container-fluid d-flex">
           <div className="row">
-            {menuOpen && <Menu onClose={() => setMenuOpen(false)} />}
+            {menuOpen && (
+              <>
+                <div
+                  className="menu-backdrop"
+                  onClick={() => setMenuOpen(false)}
+                  aria-hidden="true"
+                />
+                <Menu onClose={() => setMenuOpen(false)} />
+              </>
+            )}
             <div className="col mb-5">
               <Breadcrumb />
               <div
