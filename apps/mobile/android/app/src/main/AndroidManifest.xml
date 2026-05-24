@@ -1,8 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Necessario para qualquer chamada HTTP/HTTPS (auth do Augustus, etc.). -->
+    <!-- Sem isso, builds release nao conseguiam falar com o backend porque -->
+    <!-- so debug/profile declaravam INTERNET. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:label="flutter_riverpod_clean_architecture"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:networkSecurityConfig="@xml/network_security_config">
         <activity
             android:name=".MainActivity"
             android:exported="true"

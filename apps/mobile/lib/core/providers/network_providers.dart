@@ -4,6 +4,7 @@ import '../constants/app_constants.dart';
 import '../network/interceptors/auth_interceptor.dart';
 import '../network/interceptors/refresh_interceptor.dart';
 import '../network/interceptors/retry_interceptor.dart';
+import '../network/interceptors/safe_log_interceptor.dart';
 import '../network/refresh_dio_provider.dart';
 import '../storage/auth_token_storage.dart';
 
@@ -27,25 +28,19 @@ Dio dio(Ref ref) {
   final refreshDio = ref.read(refreshDioProvider);
 
   // Ordem dos interceptors:
-  //   1. AuthInterceptor — injeta Bearer ANTES do log (assim o LogInterceptor
-  //      ate poderia logar o header, mas mantemos `requestHeader: false`
-  //      por seguranca para nao vazar tokens em prod).
-  //   2. LogInterceptor — sem `requestHeader` para nao vazar Bearer.
-  //   3. RetryInterceptor — retries de timeout/SocketException.
+  //   1. AuthInterceptor — injeta Bearer antes do log.
+  //   2. SafeLogInterceptor — loga so method+path+status, **nunca**
+  //      headers ou body. O LogInterceptor padrao do Dio vazaria senha
+  //      (em /auth/login) e tokens (em /auth/refresh) caso `requestBody`
+  //      ou `responseBody` ficassem true.
+  //   3. RetryInterceptor — retries APENAS em metodos idempotentes
+  //      (GET/HEAD/OPTIONS) ou quando o caller marca explicitamente
+  //      `extra: {'noRetry': true}`.
   //   4. RefreshInterceptor — refresh single-flight em 401, com
-  //      `_retry: (opts) => dio.fetch(opts)` capturando o proprio `dio`
-  //      por closure (referencia ja existe quando o callback roda).
+  //      `_retry: (opts) => dio.fetch(opts)` capturando `dio` por closure
+  //      (referencia ja existe quando o callback roda).
   dio.interceptors.add(AuthInterceptor(tokenStorage: tokenStorage));
-  dio.interceptors.add(
-    LogInterceptor(
-      request: true,
-      requestHeader: false,
-      requestBody: true,
-      responseHeader: false,
-      responseBody: true,
-      error: true,
-    ),
-  );
+  dio.interceptors.add(SafeLogInterceptor());
   dio.interceptors.add(RetryInterceptor(dio: dio));
   dio.interceptors.add(
     RefreshInterceptor(

@@ -75,6 +75,22 @@ class RetryInterceptor extends Interceptor {
   }
 
   bool _shouldRetry(DioException err) {
+    // Caller pode marcar um request individual como nao-retentavel com
+    // `Options(extra: {'noRetry': true})` — usado por mutacoes de auth e
+    // por qualquer chamada que ja garanta idempotencia em outra camada.
+    if (err.requestOptions.extra['noRetry'] == true) {
+      return false;
+    }
+
+    // Retry apenas em metodos idempotentes. POST/PUT/PATCH/DELETE podem
+    // ter side-effects (criar usuario, enviar email, registrar tentativa
+    // de login bloqueada) — repetir e perigoso.
+    final method = err.requestOptions.method.toUpperCase();
+    const idempotent = {'GET', 'HEAD', 'OPTIONS'};
+    if (!idempotent.contains(method)) {
+      return false;
+    }
+
     return err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.sendTimeout ||
         err.type == DioExceptionType.receiveTimeout ||
