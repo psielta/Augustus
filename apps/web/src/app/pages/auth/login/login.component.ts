@@ -51,6 +51,7 @@ export class LoginComponent implements OnInit {
   flashSucesso = signal<string | null>(null);
   reenvioPendente = signal(false);
   reenvioFeito = signal(false);
+  reenvioErro = signal<string | null>(null);
 
   ngOnInit(): void {
     this.formulario = this.fb.group({
@@ -101,8 +102,15 @@ export class LoginComponent implements OnInit {
       return;
     }
     this.reenvioPendente.set(true);
-    await this.auth.reenviarVerificacao(email);
+    this.reenvioFeito.set(false);
+    this.reenvioErro.set(null);
+    const r = await this.auth.reenviarVerificacao(email);
     this.reenvioPendente.set(false);
-    this.reenvioFeito.set(true);
+    if (r.ok) {
+      this.reenvioFeito.set(true);
+      return;
+    }
+    const tipo = extrairTipoErro(r.problem);
+    this.reenvioErro.set(mensagemAmigavel(tipo, r.problem));
   }
 }

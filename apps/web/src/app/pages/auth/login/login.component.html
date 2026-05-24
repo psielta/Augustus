@@ -94,10 +94,17 @@
             {{ reenvioPendente() ? 'Reenviando...' : 'Reenviar email de verificação' }}
           </br-button>
           <br-message
-            *ngIf="reenvioFeito()"
+            *ngIf="reenvioFeito() && !reenvioErro()"
             state="info"
             is-feedback
             message="Se sua conta existir, enviamos um novo email. Aguarde alguns minutos."
+            class="mt-2"
+          ></br-message>
+          <br-message
+            *ngIf="reenvioErro() as msg"
+            state="danger"
+            is-feedback
+            [message]="msg"
             class="mt-2"
           ></br-message>
         </div>

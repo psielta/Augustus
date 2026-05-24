@@ -6,6 +6,10 @@ import {
   BrMessage,
 } from '@govbr-ds/webcomponents-angular/standalone';
 import { AuthService } from '../../../core/auth/auth.service';
+import {
+  extrairTipoErro,
+  mensagemAmigavel,
+} from '../../../core/auth/models/problem-detail';
 
 @Component({
   selector: 'app-verify-pending',
@@ -21,6 +25,7 @@ export class VerifyPendingComponent implements OnInit {
   email = signal<string | null>(null);
   reenvioPendente = signal(false);
   reenvioFeito = signal(false);
+  reenvioErro = signal<string | null>(null);
 
   ngOnInit(): void {
     const e =
@@ -32,8 +37,15 @@ export class VerifyPendingComponent implements OnInit {
     const e = this.email();
     if (!e) return;
     this.reenvioPendente.set(true);
-    await this.auth.reenviarVerificacao(e);
+    this.reenvioFeito.set(false);
+    this.reenvioErro.set(null);
+    const r = await this.auth.reenviarVerificacao(e);
     this.reenvioPendente.set(false);
-    this.reenvioFeito.set(true);
+    if (r.ok) {
+      this.reenvioFeito.set(true);
+      return;
+    }
+    const tipo = extrairTipoErro(r.problem);
+    this.reenvioErro.set(mensagemAmigavel(tipo, r.problem));
   }
 }

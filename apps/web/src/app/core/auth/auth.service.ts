@@ -143,14 +143,42 @@ export class AuthService {
         );
         this.tokenStorage.salvar(tokens);
         return true;
-      } catch {
-        this.tokenStorage.limpar();
+      } catch (err) {
+        // So limpa o storage quando o backend confirma que o refresh nao vale
+        // mais (401 com slug `refresh-token-invalido`/`nao-autenticado`).
+        // Em erros transitorios (offline, timeout, 5xx) preservamos os tokens
+        // para que uma proxima tentativa possa funcionar.
+        if (this.isRefreshDefinitivamenteInvalido(err)) {
+          this.tokenStorage.limpar();
+        }
         return false;
       } finally {
         this.refreshEmAndamento = null;
       }
     })();
     return this.refreshEmAndamento;
+  }
+
+  private isRefreshDefinitivamenteInvalido(err: unknown): boolean {
+    if (!(err instanceof HttpErrorResponse)) {
+      return false;
+    }
+    if (err.status !== 401 && err.status !== 400) {
+      return false;
+    }
+    const body = err.error;
+    if (body && typeof body === 'object') {
+      const slug = (body as ProblemDetail).type?.split('/').pop()?.toLowerCase();
+      if (slug === 'refresh-token-invalido' || slug === 'nao-autenticado') {
+        return true;
+      }
+      // 400 sem slug conhecido nao implica invalido — pode ser body malformado.
+      if (err.status === 400) {
+        return false;
+      }
+    }
+    // 401 sem body parseavel: tratar como sessao invalida.
+    return err.status === 401;
   }
 
   async restaurarSessao(): Promise<void> {

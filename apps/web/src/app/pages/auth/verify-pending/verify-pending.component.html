@@ -15,9 +15,15 @@
       </p>
 
       <br-message
-        *ngIf="reenvioFeito()"
+        *ngIf="reenvioFeito() && !reenvioErro()"
         state="info"
         message="Se sua conta existir, enviamos um novo email. Aguarde alguns minutos antes de tentar novamente."
+        class="mb-3"
+      ></br-message>
+      <br-message
+        *ngIf="reenvioErro() as msg"
+        state="danger"
+        [message]="msg"
         class="mb-3"
       ></br-message>
 
