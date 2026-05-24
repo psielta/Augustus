@@ -304,21 +304,35 @@ Referencia de uso e catalogo de componentes:
 - Storybook dos Web Components: `https://webcomponent-ds.estaleiro.serpro.gov.br/`
 - Pacote npm: `https://www.npmjs.com/package/@govbr-ds/webcomponents-angular`
 
+### Autenticacao web (v1 — fatia atual)
+
+Implementada em `apps/web/src/app/core/auth/` + `apps/web/src/app/pages/auth/`. Consome `/api/auth/*` do backend Augustus via proxy reverso de dev.
+
+- **`HttpClient` registrado** em `app.config.ts` via `provideHttpClient(withInterceptors([authInterceptor]))`.
+- **Restauracao de sessao no bootstrap** via `provideAppInitializer` que chama `AuthService.restaurarSessao()` (faz `POST /api/auth/refresh` + `GET /api/auth/me` se ha refresh em storage).
+- **`AuthService`** baseado em Angular Signals: `usuario`, `status`, `precisaVerificarEmail`, `emailEmVerificacao`, `isAutenticado` (computed). Metodos: `registrar`, `login`, `verificarEmailComToken`, `reenviarVerificacao`, `refresh`, `logout`, `carregarMe`, `restaurarSessao`.
+- **`authInterceptor`** (`HttpInterceptorFn` standalone): injeta `Authorization: Bearer ...`, skip para `/api/auth/{login,register,refresh,verify-email,resend-verification}`. Em 401 (fora de skip), chama `auth.refresh()` em **single-flight** (Promise compartilhada) e retenta a request original. Refresh falho propaga 401.
+- **Guards funcionais**: `authGuard: CanActivateFn` + `naoAutenticadoGuard: CanMatchFn` em `auth.guard.ts`. Rotas `/auth/login` e `/auth/register` usam `canMatch: [naoAutenticadoGuard]` para evitar mostra-las quando logado. Rotas legadas (`'formulario'`, `'cores'`, `''`) permanecem publicas.
+- **Tokens em `localStorage`** via `TokenStorage` (`augustus.auth.access`, `augustus.auth.refresh`, `*.expiraEm`). **Decisao MVP, divida tecnica registrada**: vulneravel a XSS. Migrar para httpOnly cookie quando o backend suportar Set-Cookie + CSRF. Auditar manualmente qualquer uso futuro de `innerHTML`/`bypassSecurityTrust*`/`eval`.
+- **`proxy.conf.json`** mapeando `/api -> http://localhost:8080`. Sem CORS no backend; producao precisa mover frontend para mesmo dominio ou habilitar CORS.
+- **Link de verificacao por email**: backend usa `AUGUSTUS_VERIFICACAO_URL`. Em dev, **operador deve sobrescrever** para `http://localhost:4200/auth/verify-email`; o frontend tem rota correspondente que extrai `?token=...` e chama `POST /api/auth/verify-email` (JSON, com ProblemDetail em erro — melhor UX que o GET text/plain do backend).
+- **Pre-condicao do backend em dev**: precisa rodar `mvnw flyway:migrate` (nonpro) e sobrescrever `spring.datasource.url` no `.env` para o banco gravavel `calculadora-nonpro.db` — o profile `offline` default e read-only.
+- **Tratamento de `ProblemDetail`**: helpers em `core/auth/models/problem-detail.ts` (`extrairTipoErro` + `mensagemAmigavel`). Slugs reconhecidos: `email-ja-cadastrado`, `email-nao-verificado`, `credenciais-invalidas`, `usuario-bloqueado`, `refresh-token-invalido`, `token-verificacao-invalido`, `nao-autenticado`, `envio-email-falhou`.
+
 ### Nao existe no frontend atual
 
-- HttpClient configurado (sem `provideHttpClient` em `app.config.ts`)
-- Integracao real com `apps/backend`
-- Gerenciamento de estado (NgRx, NGXS, Akita, signal stores customizados)
+- Gerenciamento de estado fora de auth (NgRx, NGXS, signal stores customizados — auth usa Signals nativos)
 - Outro framework de UI (Tailwind, Bootstrap CSS, Material, PrimeNG)
-- Testes unitarios escritos (sem arquivos `*.spec.ts` em `src/`)
+- Testes unitarios escritos (sem arquivos `*.spec.ts` em `src/`) — `ng test` permanece postpornado, sem `tsconfig.spec.json` nem `public/` nem `karma`/`jasmine` em devDependencies
 - ESLint, Prettier ou Stylelint configurados
 - Arquivos de ambiente (`src/environments/`)
 - i18n / traducoes
 - PWA / Service Worker
+- httpOnly cookie para tokens (decisao MVP usa localStorage)
 
 Diretriz visual: o frontend web sera sempre light mode. Nao adicionar dark mode, theme switcher ou estilos alternativos de tema escuro.
 
-Observacao: o `angular.json` referencia `tsconfig.spec.json` e o diretorio `public/` no target de `test`, mas esses artefatos nao existem no snapshot. Para rodar `ng test`, criar primeiro `tsconfig.spec.json`, criar `public/` e instalar `karma`/`jasmine`.
+Versoes GovBR-DS estao **pinadas exatas** em `package.json` (`2.0.0-next.41` sem `^`) para evitar breakage entre pre-releases consecutivos.
 
 ### Comandos do frontend
 

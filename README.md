@@ -150,7 +150,7 @@ Variaveis relevantes:
 - `AUGUSTUS_MAIL_USERNAME`.
 - `AUGUSTUS_MAIL_PASSWORD`, que deve ser Gmail App Password, nao a senha normal da conta. A conta precisa de 2FA e a senha deve ser criada em `https://myaccount.google.com/apppasswords`.
 - `AUGUSTUS_MAIL_FROM`.
-- `AUGUSTUS_VERIFICACAO_URL` opcional, default `http://localhost:8080/api/auth/verify-email`.
+- `AUGUSTUS_VERIFICACAO_URL` opcional, default `http://localhost:8080/api/auth/verify-email`. Para o fluxo web em dev, **sobrescrever para `http://localhost:4200/auth/verify-email`** (o frontend Angular intercepta o `?token=...` e chama o POST do backend, dando UX melhor que o GET text/plain).
 
 Exemplo de setup local:
 
@@ -238,9 +238,36 @@ CDNs referenciadas em `src/index.html`:
 - Fonte Raleway (Google Fonts)
 - Font Awesome 5.15.4 (cdnjs)
 
-Ainda nao existe no frontend: HttpClient configurado, integracao com `apps/backend`, gerenciamento de estado, testes unitarios, ESLint/Prettier/Stylelint, environments, i18n ou PWA.
+Existe: `HttpClient` configurado, integracao real com `apps/backend` para autenticacao (`/api/auth/*`), interceptor JWT com refresh single-flight, guards de rota, `AuthService` baseado em Signals, restauracao automatica de sessao no bootstrap.
+
+Ainda nao existe no frontend: gerenciamento de estado para alem de auth, testes unitarios (`ng test`), ESLint/Prettier/Stylelint, environments, i18n ou PWA.
 
 Diretriz visual do frontend: a aplicação web será sempre light mode. Não adicionar dark mode, theme switcher ou estilos alternativos de tema escuro.
+
+### Autenticacao web (v1)
+
+Rotas novas em `apps/web/src/app/pages/auth/`:
+
+- `/auth/login` — formulario email/senha, mostra erros do `ProblemDetail`, oferece reenvio de email quando o backend retorna `EMAIL_NAO_VERIFICADO`.
+- `/auth/register` — formulario nome/email/senha, redireciona para `/auth/verify-pending?email=...` em sucesso.
+- `/auth/verify-pending` — instrucao para abrir o link no email, botao "Reenviar email".
+- `/auth/verify-email?token=...` — callback do link do email. Le o token, chama `POST /api/auth/verify-email`, redireciona para `/auth/login?verificado=1` em sucesso.
+
+Decisoes de seguranca (MVP — registrar como divida tecnica):
+
+- **`accessToken` e `refreshToken` em `localStorage`**. Centralizado em `core/auth/token-storage.ts`. Risco aceito: XSS rouba tokens. Migrar para httpOnly cookie quando o backend suportar Set-Cookie + CSRF.
+- **Refresh single-flight em 401**: o `authInterceptor` (`HttpInterceptorFn` standalone) usa uma `Promise` compartilhada para garantir 1 refresh por vez mesmo com varios 401 em paralelo.
+- **Sem CORS no backend**: dev usa `proxy.conf.json` mapeando `/api` -> `http://localhost:8080`. Producao precisa mover frontend para o mesmo dominio do backend ou habilitar CORS no `SecurityConfig`.
+
+Setup do backend para o fluxo web funcionar end-to-end (dev):
+
+```powershell
+# em apps/backend/.env (gitignored)
+AUGUSTUS_VERIFICACAO_URL=http://localhost:4200/auth/verify-email
+spring.datasource.url=jdbc:sqlite:file:./calculadora/db/calculadora-nonpro.db?date_class=TEXT&date_string_format=yyyy-MM-dd&foreign_keys=ON
+```
+
+Sem esse `spring.datasource.url`, o profile `offline` aponta para SQLite read-only, e qualquer registro/login falha porque auth precisa de `INSERT`/`UPDATE`.
 
 ### Comandos
 
@@ -248,7 +275,7 @@ A partir de `apps/web`:
 
 ```powershell
 npm install
-npm run start            # ng serve (http://localhost:4200/)
+npm run start            # ng serve em http://localhost:4200/ com proxy /api -> :8080
 npm run build            # ng build (production por padrao)
 npm run build:pages      # build com base-href para GitLab Pages
 npm run ng -- <args>     # Angular CLI direto
@@ -256,12 +283,12 @@ npm run ng -- <args>     # Angular CLI direto
 
 Linux/macOS: mesmos comandos `npm`.
 
-> O `angular.json` referencia `tsconfig.spec.json` e o diretorio `public/` no target de `test`, mas esses arquivos nao existem no snapshot. Para rodar `ng test`, criar primeiro `tsconfig.spec.json` e instalar `karma`/`jasmine`.
+> O `angular.json` referencia `tsconfig.spec.json` e o diretorio `public/` no target de `test`, mas esses arquivos nao existem no snapshot. Para rodar `ng test`, criar primeiro `tsconfig.spec.json` e instalar `karma`/`jasmine` — fora do escopo desta fatia.
 
 ### Runtime
 
 - Dev server: `http://localhost:4200/`
-- Backend independente em `http://localhost:8080/api` — ainda nao integrado
+- Backend: `http://localhost:8080/api` (consumido via proxy `/api`)
 
 ## Mobile
 
