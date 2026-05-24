@@ -36,7 +36,12 @@ const Header = ({ onToggleMenu }: HeaderProps) => {
           </div>
           {isAutenticado && usuario && (
             <div className="header-actions d-flex align-items-center gap-2">
-              <span className="text-base me-3">Olá, {usuario.nome}</span>
+              <span
+                className="text-base mr-3"
+                style={{ marginRight: "1rem" }}
+              >
+                Olá, {usuario.nome}
+              </span>
               <BrButton type="button" emphasis="secondary" onClick={onSair}>
                 Sair
               </BrButton>
