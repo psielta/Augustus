@@ -49,8 +49,16 @@ final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
 
 /// Restaura sessao no bootstrap: tenta `/auth/me` se ha refresh em storage.
 /// Disparado uma unica vez ao primeiro `watch` do provider.
+///
+/// `Future.microtask` adia a modificacao do `authProvider` para fora
+/// do build do `appBootstrapProvider`. Sem isso, Riverpod 3 lanca
+/// `"Providers are not allowed to modify other providers during their
+/// initialization"` porque `inicializar()` faz `state = ...` no
+/// AuthNotifier enquanto o FutureProvider ainda esta sendo construido.
 final appBootstrapProvider = FutureProvider<void>((ref) async {
-  await ref.read(authProvider.notifier).inicializar();
+  await Future.microtask(
+    () => ref.read(authProvider.notifier).inicializar(),
+  );
 });
 
 class MyApp extends ConsumerWidget {
