@@ -63,6 +63,7 @@ dependencies:
   web_socket_channel: ^3.0.3
   flutter_form_builder: ^10.2.0
   form_builder_validators: ^11.2.0
+  flutter_svg: ^2.0.10+1
 
 dev_dependencies:
   flutter_test:
@@ -100,7 +101,10 @@ flutter:
   assets:
     # Common assets
     - assets/images/
-    
+
+    # Branding (logo + simbolo do Augustus)
+    - assets/images/brand/
+
     # Language-specific assets
     - assets/images/en/
     - assets/images/es/

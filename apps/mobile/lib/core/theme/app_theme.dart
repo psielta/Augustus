@@ -9,8 +9,11 @@ class AppTheme {
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
+    // Seed na paleta GovBR-DS warm-vivid-70 (`#1351b4`) para alinhar com
+    // o frontend web (`apps/web`). Material 3 gera o ColorScheme completo
+    // a partir do seed; AppBar, botoes e chips herdam o azul Augustus.
     colorScheme: ColorScheme.fromSeed(
-      seedColor: Colors.blue,
+      seedColor: const Color(0xFF1351b4),
       brightness: Brightness.light,
     ),
     appBarTheme: const AppBarTheme(

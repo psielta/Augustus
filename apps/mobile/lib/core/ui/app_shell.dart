@@ -4,6 +4,7 @@ import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants
 import 'package:flutter_riverpod_clean_architecture/core/utils/app_utils.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/domain/entities/usuario_entity.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 const double _wideBreakpoint = 768.0;
@@ -166,15 +167,14 @@ class _AugustusDrawer extends StatelessWidget {
                 Container(
                   width: 48,
                   height: 48,
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: colorScheme.onPrimary,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Icons.account_balance_wallet,
-                    color: colorScheme.primary,
-                    size: 28,
+                  child: SvgPicture.asset(
+                    'assets/images/brand/augustus-symbol.svg',
+                    semanticsLabel: 'Augustus',
                   ),
                 ),
                 const SizedBox(height: 12),

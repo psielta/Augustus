@@ -4,6 +4,7 @@ import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants
 import 'package:flutter_riverpod_clean_architecture/core/error/failures.dart';
 import 'package:flutter_riverpod_clean_architecture/core/utils/app_utils.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -113,8 +114,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.lock_outline,
-                      size: 80, color: Colors.blue),
+                  SvgPicture.asset(
+                    'assets/images/brand/augustus-symbol.svg',
+                    width: 80,
+                    height: 80,
+                    semanticsLabel: 'Augustus',
+                  ),
                   const SizedBox(height: 24),
                   const Text(
                     'Augustus',

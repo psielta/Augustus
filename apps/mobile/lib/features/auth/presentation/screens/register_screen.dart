@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
 import 'package:flutter_riverpod_clean_architecture/core/utils/app_utils.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -73,8 +74,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.person_add_alt_1,
-                      size: 72, color: Colors.blue),
+                  SvgPicture.asset(
+                    'assets/images/brand/augustus-symbol.svg',
+                    width: 72,
+                    height: 72,
+                    semanticsLabel: 'Augustus',
+                  ),
                   const SizedBox(height: 24),
                   const Text(
                     'Criar conta no Augustus',
