@@ -21,7 +21,7 @@ O `README.md` da raiz deve usar o arquivo canônico:
 
 ## Uso futuro no web
 
-Quando a identidade for aplicada no Angular, copie ou sincronize os arquivos para:
+Quando a identidade for aplicada no React, copie ou sincronize os arquivos para:
 
 ```txt
 apps/web/src/assets/brand/augustus-logo.svg
