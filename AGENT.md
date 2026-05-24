@@ -242,31 +242,47 @@ Stack real:
 - Standalone components, sem `NgModule`
 - Builder `@angular-devkit/build-angular:application`
 - SCSS
-- GovBR-DS:
+- GovBR-DS (versoes pinadas, sem `^`):
   - `@govbr-ds/core` 3.6.x
-  - `@govbr-ds/webcomponents` 2.0.0-next.x
-  - `@govbr-ds/webcomponents-angular` 2.0.0-next.x
+  - `@govbr-ds/webcomponents` 2.0.0-next.41
+  - `@govbr-ds/webcomponents-angular` 2.0.0-next.41
 - RxJS 7.8.x
 - Zone.js 0.15.x
+- `provideHttpClient(withInterceptors([authInterceptor]))` + `provideAppInitializer` em `app.config.ts`
+
+Existe no frontend:
+
+- Autenticacao real consumindo `/api/auth/*` do backend Augustus
+  - Telas: `/auth/login`, `/auth/register`, `/auth/verify-pending`, `/auth/verify-email`
+  - `AuthService` baseado em Angular Signals (`usuario`, `status`, `isAutenticado`)
+  - `authInterceptor` (HttpInterceptorFn) com refresh single-flight em 401
+  - `authGuard: CanActivateFn` + `naoAutenticadoGuard: CanMatchFn`
+  - `TokenStorage` encapsulando localStorage (decisao MVP — divida tecnica registrada)
+  - `proxy.conf.json` mapeando `/api` para `http://localhost:8080`
+  - Restauracao de sessao no bootstrap via `provideAppInitializer`
 
 Ainda nao existe no frontend:
 
-- `HttpClient` configurado
-- Integracao real com `apps/backend`
-- Gerenciamento de estado
-- Testes unitarios escritos
+- Gerenciamento de estado fora de auth (NgRx, NGXS, signal stores customizados)
+- Testes unitarios escritos (`ng test` precisa de setup; `tsconfig.spec.json`, `public/`, karma, jasmine nao existem)
 - ESLint/Prettier/Stylelint
 - Environments
 - i18n
 - PWA
+- httpOnly cookie para tokens (atualmente usa localStorage por decisao MVP)
 
 Diretriz visual: web sempre light mode. Nao adicionar dark mode, theme switcher ou estilos de tema escuro.
+
+Env vars do backend que afetam o frontend em dev:
+
+- `AUGUSTUS_VERIFICACAO_URL` deve ser `http://localhost:4200/auth/verify-email` para o link do email cair na rota do frontend.
+- `spring.datasource.url` em `apps/backend/.env` precisa apontar para `calculadora-nonpro.db` (gravavel) para registrar/login funcionar — o profile `offline` default usa `mode=ro`.
 
 Comandos, a partir de `apps/web`:
 
 ```powershell
 npm install
-npm run start
+npm run start            # ng serve com proxy /api -> :8080
 npm run build
 npm run build:pages
 npm run ng -- <args>
@@ -275,30 +291,36 @@ npm run ng -- <args>
 Runtime:
 
 - Dev server: `http://localhost:4200/`
-- Backend independente: `http://localhost:8080/api`
-- Ainda nao existe integracao real com backend.
+- Backend: `http://localhost:8080/api` (consumido via proxy `/api`)
 
 Estrutura atual:
 
 ```txt
-apps/web/src/
-  index.html
-  main.ts
-  styles.scss
-  app/
-    app.component.ts
-    app.config.ts
-    app.routes.ts
-    pages/
-      home/
-      form/
-      colors/
-    shared/components/
-      header/
-      menu/
-      footer/
-  assets/
-  data/cores.ts
+apps/web/
+  proxy.conf.json
+  src/
+    index.html
+    main.ts
+    styles.scss
+    app/
+      app.component.ts          # botao Sair condicional + saudacao
+      app.config.ts             # provideHttpClient + provideAppInitializer
+      app.routes.ts             # rotas /auth/* + legadas
+      core/auth/
+        models/{usuario,token-pair,registro,problem-detail}.ts
+        token-storage.ts
+        auth.service.ts          # Signals + Promise<Resultado<T>>
+        auth.interceptor.ts      # HttpInterceptorFn single-flight
+        auth.guard.ts            # CanActivateFn + CanMatchFn
+        app-initializer.ts
+      pages/
+        home/
+        form/
+        colors/
+        auth/{login,register,verify-pending,verify-email}/
+      shared/components/{header,menu,footer}/
+    assets/
+    data/cores.ts
 ```
 
 Padroes:
@@ -306,8 +328,12 @@ Padroes:
 - Manter standalone components.
 - Preferir wrappers de `@govbr-ds/webcomponents-angular/standalone`.
 - Nao introduzir `NgModule` sem razao explicita.
-- Para integrar backend, registrar `provideHttpClient(withFetch())` e centralizar base URL.
+- Toda chamada HTTP ao backend usa path relativo `/api/...` (passa pelo proxy em dev e e mesma origem em prod).
+- Nao remover `proxy.conf.json` sem mover frontend para mesmo dominio do backend ou habilitar CORS no `SecurityConfig`.
+- Nao trocar `localStorage` por outra estrategia (`sessionStorage`/cookie/IndexedDB) sem auditar XSS no codigo.
+- Nao expor `accessToken` ou `refreshToken` em logs ou em `console.log`.
 - Nao substituir GovBR-DS por Material, PrimeNG, Tailwind ou Bootstrap sem decisao explicita.
+- Nao desfixar (`^`) as versoes `@govbr-ds/webcomponents*` em `2.0.0-next.41` enquanto o pacote estiver em `-next` — risco de breaking change silenciosa.
 - O target de teste referencia `tsconfig.spec.json` e `public/`, mas esses artefatos ainda nao existem; nao assumir que `ng test` funciona sem setup.
 
 ## Mobile
@@ -451,7 +477,11 @@ features/<feature>/
 - Nao mover o blueprint de banco de `docs/database/blueprints` para Flyway como uma migration unica sem plano incremental.
 - Nao introduzir `NgModule` em `apps/web`.
 - Nao substituir GovBR-DS por outra biblioteca visual sem decisao explicita.
+- Nao desfixar (`^`) versoes `@govbr-ds/webcomponents*` enquanto estiverem em pre-release `-next`.
 - Nao remover CDNs de Rawline/Raleway/Font Awesome em `apps/web/src/index.html` sem substituto.
+- Nao remover `apps/web/proxy.conf.json` sem mover frontend para mesmo dominio do backend ou habilitar CORS no `SecurityConfig`.
+- Nao trocar `localStorage` por outra estrategia para `accessToken`/`refreshToken` no web sem auditar XSS no codigo Angular (uso de `innerHTML`, `bypassSecurityTrust*`, `eval`).
+- Nao logar `accessToken`, `refreshToken` ou conteudo do `AuthTokenStorage` no console.
 - Nao tratar as features Flutter de exemplo (`auth`, `chat`, `survey`) como dominio final do Augustus.
 
 ## Verificacao por tipo de mudanca
