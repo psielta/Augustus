@@ -9,20 +9,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@govbr-ds/core": "^3.6.1",
+    "@govbr-ds/core": "3.6.1",
     "@govbr-ds/webcomponents": "2.0.0-next.41",
     "@govbr-ds/webcomponents-react": "2.0.0-next.41",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^6.22.3"
+    "react-router-dom": "^6.30.3"
   },
   "devDependencies": {
-    "@govbr-ds/release-config": "4.3.0",
     "@types/node": "^24.0.10",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
     "typescript": "~5.8.3",
-    "vite": "^6.3.2"
+    "vite": "^6.4.2"
   }
 }

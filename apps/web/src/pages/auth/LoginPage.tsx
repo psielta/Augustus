@@ -9,6 +9,17 @@ import {
   type TipoErroAuth,
 } from "../../types/auth";
 
+function destinoSeguroPosLogin(valor: string | null): string {
+  if (!valor) return "/";
+  // Path interno deve comecar com '/' e nao pode comecar com '//' nem '/\'
+  // (URL//host vira protocol-relative; '/\\host' tambem e tratado como host
+  // por alguns parsers). Bloqueia tambem ':' que indicaria protocolo.
+  if (!valor.startsWith("/")) return "/";
+  if (valor.startsWith("//") || valor.startsWith("/\\")) return "/";
+  if (valor.includes(":")) return "/";
+  return valor;
+}
+
 export default function LoginPage() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -77,7 +88,7 @@ export default function LoginPage() {
     setEnviando(false);
 
     if (r.ok) {
-      const redirect = searchParams.get("redirect") ?? "/";
+      const redirect = destinoSeguroPosLogin(searchParams.get("redirect"));
       navigate(redirect, { replace: true });
       return;
     }
@@ -137,6 +148,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 state={erroEmail ? "danger" : undefined}
+                {...({ autocomplete: "username" } as Record<string, string>)}
                 onInput={(e) =>
                   setEmail((e.target as HTMLInputElement).value)
                 }
@@ -160,6 +172,7 @@ export default function LoginPage() {
                 type={mostrarSenha ? "text" : "password"}
                 value={senha}
                 state={erroSenha ? "danger" : undefined}
+                {...({ autocomplete: "current-password" } as Record<string, string>)}
                 onInput={(e) =>
                   setSenha((e.target as HTMLInputElement).value)
                 }

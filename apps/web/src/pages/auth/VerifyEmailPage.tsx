@@ -18,17 +18,22 @@ export default function VerifyEmailPage() {
   const [status, setStatus] = useState<Status>("processando");
   const [mensagem, setMensagem] = useState<string>("");
   const [, setTipoErro] = useState<TipoErroAuth | null>(null);
-  const verificadoRef = useRef(false);
+  // Guarda o ultimo token processado (string), nao apenas um booleano:
+  // protege contra a re-execucao do StrictMode no mesmo token, mas
+  // ainda permite reprocessar quando o usuario abre `?token=` diferente
+  // na mesma instancia da SPA.
+  const tokenProcessadoRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (verificadoRef.current) return;
-    verificadoRef.current = true;
-
     const token = searchParams.get("token");
     if (!token) {
       setStatus("sem-token");
       return;
     }
+    if (tokenProcessadoRef.current === token) return;
+    tokenProcessadoRef.current = token;
+    setStatus("processando");
+
     (async () => {
       const r = await auth.verificarEmailComToken(token);
       if (r.ok) {

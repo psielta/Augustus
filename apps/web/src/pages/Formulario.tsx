@@ -40,16 +40,63 @@ const initialForm: CadastroData = {
   termos: false,
 };
 
+function validaCampo(
+  data: CadastroData,
+  field: keyof CadastroData
+): string | undefined {
+  const v = data[field];
+  switch (field) {
+    case "nome":
+      return !v || (v as string).trim().length < 3
+        ? "Nome deve ter ao menos 3 caracteres"
+        : undefined;
+    case "email":
+      if (!v) return "E-mail obrigatório";
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v as string)
+        ? undefined
+        : "Digite um e-mail válido";
+    case "cpf":
+      if (!v) return "CPF obrigatório";
+      return /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(v as string)
+        ? undefined
+        : "Formato: 000.000.000-00";
+    case "telefone":
+      if (!v) return "Telefone obrigatório";
+      return /^\(\d{2}\) \d{5}-\d{4}$/.test(v as string)
+        ? undefined
+        : "Formato: (00) 00000-0000";
+    case "senha":
+      if (!v) return "Senha obrigatória";
+      return (v as string).length < 8 ? "Ao menos 8 caracteres" : undefined;
+    case "confirmarSenha":
+      if (!v) return "Confirme sua senha";
+      return (v as string) !== data.senha
+        ? "As senhas não coincidem"
+        : undefined;
+    case "termos":
+      return data.termos ? undefined : "Você precisa aceitar os termos";
+    default:
+      return undefined;
+  }
+}
+
+function validaTodos(data: CadastroData): ErrosCadastro {
+  const erros: ErrosCadastro = {};
+  (Object.keys(data) as (keyof CadastroData)[]).forEach((field) => {
+    if (field === "genero") return;
+    const erro = validaCampo(data, field);
+    if (erro) erros[field] = erro;
+  });
+  return erros;
+}
+
 const Formulario: React.FC = () => {
-  // Estados de cadastro e erros
   const [form, setForm] = useState<CadastroData>({ ...initialForm });
   const [errosCad, setErrosCad] = useState<ErrosCadastro>({});
 
-  // Mostrar/ocultar senha
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [mostrarConfirmSenha, setMostrarConfirmSenha] = useState(false);
 
-  // Handlers genéricos
   const handleChangeCad = (
     field: keyof CadastroData,
     value: string | boolean
@@ -57,65 +104,18 @@ const Formulario: React.FC = () => {
     setForm((f) => ({ ...f, [field]: value }));
   };
 
-  // Validações de cadastro
-  const validaCampoCad = (field: keyof CadastroData) => {
-    const e = { ...errosCad };
-    const v = form[field];
-    switch (field) {
-      case "nome":
-        e.nome =
-          !v || (v as string).trim().length < 3
-            ? "Nome deve ter ao menos 3 caracteres"
-            : undefined;
-        break;
-      case "email":
-        e.email = !v
-          ? "E-mail obrigatório"
-          : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v as string)
-          ? "Digite um e-mail válido"
-          : undefined;
-        break;
-      case "cpf":
-        e.cpf = !v
-          ? "CPF obrigatório"
-          : !/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(v as string)
-          ? "Formato: 000.000.000-00"
-          : undefined;
-        break;
-      case "telefone":
-        e.telefone = !v
-          ? "Telefone obrigatório"
-          : !/^\(\d{2}\) \d{5}-\d{4}$/.test(v as string)
-          ? "Formato: (00) 00000-0000"
-          : undefined;
-        break;
-      case "senha":
-        e.senha = !v
-          ? "Senha obrigatória"
-          : (v as string).length < 8
-          ? "Ao menos 8 caracteres"
-          : undefined;
-        break;
-      case "confirmarSenha":
-        e.confirmarSenha =
-          (v as string) !== form.senha ? "As senhas não coincidem" : undefined;
-        break;
-      case "termos":
-        e.termos = form.termos ? undefined : "Você precisa aceitar os termos";
-        break;
-    }
-    setErrosCad(e);
+  const handleBlurCad = (field: keyof CadastroData) => {
+    setErrosCad((prev) => ({ ...prev, [field]: validaCampo(form, field) }));
   };
 
-  // Submit cadastro
   const handleSubmitCad = (e: FormEvent) => {
     e.preventDefault();
-    (Object.keys(form) as (keyof CadastroData)[]).forEach(validaCampoCad);
-    if (!Object.values(errosCad).some((x) => x)) {
-      alert("Formulário de cadastro enviado com sucesso!");
-      setForm({ ...initialForm });
-      setErrosCad({});
-    }
+    const nextErrors = validaTodos(form);
+    setErrosCad(nextErrors);
+    if (Object.values(nextErrors).some((x) => x)) return;
+    alert("Formulário de cadastro enviado com sucesso!");
+    setForm({ ...initialForm });
+    setErrosCad({});
   };
 
   return (
@@ -146,13 +146,14 @@ const Formulario: React.FC = () => {
                   value={form.nome}
                   state={errosCad.nome ? "danger" : undefined}
                   placeholder="Digite seu nome"
+                  {...({ autocomplete: "name" } as Record<string, string>)}
                   onInput={(e) =>
                     handleChangeCad(
                       "nome",
                       (e.target as HTMLInputElement).value
                     )
                   }
-                  onBlur={() => validaCampoCad("nome")}
+                  onBlur={() => handleBlurCad("nome")}
                 >
                   {errosCad.nome && (
                     <BrMessage
@@ -174,13 +175,14 @@ const Formulario: React.FC = () => {
                   state={errosCad.email ? "danger" : undefined}
                   placeholder="seu.email@exemplo.com"
                   type="email"
+                  {...({ autocomplete: "email" } as Record<string, string>)}
                   onInput={(e) =>
                     handleChangeCad(
                       "email",
                       (e.target as HTMLInputElement).value
                     )
                   }
-                  onBlur={() => validaCampoCad("email")}
+                  onBlur={() => handleBlurCad("email")}
                 />
                 {errosCad.email && (
                   <BrMessage
@@ -202,10 +204,11 @@ const Formulario: React.FC = () => {
                   state={errosCad.cpf ? "danger" : undefined}
                   placeholder="000.000.000-00"
                   type="text"
+                  {...({ autocomplete: "off" } as Record<string, string>)}
                   onInput={(e) =>
                     handleChangeCad("cpf", (e.target as HTMLInputElement).value)
                   }
-                  onBlur={() => validaCampoCad("cpf")}
+                  onBlur={() => handleBlurCad("cpf")}
                 />
                 {errosCad.cpf && (
                   <BrMessage
@@ -225,13 +228,14 @@ const Formulario: React.FC = () => {
                   state={errosCad.telefone ? "danger" : undefined}
                   placeholder="(00) 00000-0000"
                   type="text"
+                  {...({ autocomplete: "tel-national" } as Record<string, string>)}
                   onInput={(e) =>
                     handleChangeCad(
                       "telefone",
                       (e.target as HTMLInputElement).value
                     )
                   }
-                  onBlur={() => validaCampoCad("telefone")}
+                  onBlur={() => handleBlurCad("telefone")}
                 />
                 {errosCad.telefone && (
                   <BrMessage
@@ -253,19 +257,20 @@ const Formulario: React.FC = () => {
                   state={errosCad.senha ? "danger" : undefined}
                   placeholder="Digite sua senha"
                   type={mostrarSenha ? "text" : "password"}
+                  {...({ autocomplete: "new-password" } as Record<string, string>)}
                   onInput={(e) =>
                     handleChangeCad(
                       "senha",
                       (e.target as HTMLInputElement).value
                     )
                   }
-                  onBlur={() => validaCampoCad("senha")}
+                  onBlur={() => handleBlurCad("senha")}
                 >
                   <BrButton
                     className="br-button"
                     type="button"
                     onClick={() => setMostrarSenha((s) => !s)}
-                    aria-label="Exibir senha"
+                    aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
                   >
                     {mostrarSenha ? "Ocultar" : "Exibir"}
                   </BrButton>
@@ -293,19 +298,22 @@ const Formulario: React.FC = () => {
                   state={errosCad.confirmarSenha ? "danger" : undefined}
                   placeholder="Confirme sua senha"
                   type={mostrarConfirmSenha ? "text" : "password"}
+                  {...({ autocomplete: "new-password" } as Record<string, string>)}
                   onInput={(e) =>
                     handleChangeCad(
                       "confirmarSenha",
                       (e.target as HTMLInputElement).value
                     )
                   }
-                  onBlur={() => validaCampoCad("confirmarSenha")}
+                  onBlur={() => handleBlurCad("confirmarSenha")}
                 >
                   <BrButton
                     className="br-button"
                     type="button"
                     onClick={() => setMostrarConfirmSenha((s) => !s)}
-                    aria-label="Exibir senha"
+                    aria-label={
+                      mostrarConfirmSenha ? "Ocultar senha" : "Mostrar senha"
+                    }
                   >
                     {mostrarConfirmSenha ? "Ocultar" : "Exibir"}
                   </BrButton>
@@ -330,7 +338,7 @@ const Formulario: React.FC = () => {
                   onChange={(e) =>
                     handleChangeCad(
                       "termos",
-                      (e.target as HTMLInputElement).checked
+                      (e.target as unknown as HTMLInputElement).checked
                     )
                   }
                   label="Li e concordo com os termos de uso e política de privacidade (Obrigatório)"

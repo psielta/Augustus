@@ -11,7 +11,11 @@ interface MenuItem {
   children?: MenuItem[];
 }
 
-const Menu: React.FC = () => {
+interface MenuProps {
+  onClose: () => void;
+}
+
+const Menu: React.FC<MenuProps> = ({ onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [itemAtivo, setItemAtivo] = useState<string | null>(null);
@@ -84,6 +88,7 @@ const Menu: React.FC = () => {
   // Navegar para a URL (o item ativo será definido automaticamente pelo useEffect)
   const navigateTo = (url: string) => {
     navigate(url);
+    onClose();
   };
 
   // Lidar com eventos de teclado para acessibilidade
@@ -102,6 +107,8 @@ const Menu: React.FC = () => {
       className="br-menu push active"
       id="main-navigation"
       style={{ width: "250px" }}
+      role="navigation"
+      aria-label="Menu principal"
     >
       <div className="menu-container">
         <div className="menu-panel">
@@ -117,8 +124,8 @@ const Menu: React.FC = () => {
               <button
                 className="br-button circle"
                 type="button"
-                aria-label="Fechar o menu"
-                data-dismiss="menu"
+                aria-label="Fechar o menu lateral"
+                onClick={onClose}
               >
                 <i className="fas fa-times" aria-hidden="true"></i>
               </button>

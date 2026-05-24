@@ -409,7 +409,7 @@ Padrao predominante:
 - Toda autenticacao passa pelo `useAuth()` (`src/hooks/useAuth.ts`); nao ler/gravar `localStorage` direto fora de `tokenStorage`.
 - Antes de adicionar `vitest` + React Testing Library, criar `vitest.config.ts` (ou usar `defineConfig` em `vite.config.ts`) e instalar `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `jsdom` em devDependencies.
 - Logs e erros no console: usar `console.error`/`console.warn` deliberadamente; preferir tratamento de erro em `HttpInterceptor` quando HTTP for adicionado.
-- Arquivos herdados do quickstart (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `LICENSE`, `.gitlab-ci.yml`, `release.config.js`, `apps/web/README.md`) ainda nao foram adaptados ao dominio de financas pessoais — confirmar com a pessoa usuaria antes de remove-los ou reescreve-los.
+- Arquivos herdados do quickstart que ainda nao foram adaptados ao dominio de financas pessoais (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `LICENSE`, `scripts/gen-components.mjs`) — confirmar com a pessoa usuaria antes de remove-los ou reescreve-los. Ja adaptados/removidos nesta fatia: `apps/web/README.md` (reescrito), `.gitlab-ci.yml` e `release.config.js` (removidos com `@govbr-ds/release-config` — pipeline GitLab/semantic-release nao aplicavel ao GitHub).
 
 ## Mobile (apps/mobile)
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { Header, Menu } from "./components";
 import Breadcrumb from "./components/Breadcrumb/Breadcrumb";
@@ -16,26 +16,15 @@ import VerifyPendingPage from "./pages/auth/VerifyPendingPage";
 import styles from "./App.module.css";
 
 function App() {
-  const [isMenuVisible, setIsMenuVisible] = useState(true);
-
-  useEffect(() => {
-    const handleToggleMenu = (event: Event) => {
-      const open = (event as CustomEvent<{ open: boolean }>).detail.open;
-      setIsMenuVisible(open);
-    };
-    window.addEventListener("toggleMenu", handleToggleMenu);
-    return () => {
-      window.removeEventListener("toggleMenu", handleToggleMenu);
-    };
-  }, []);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <Router>
-      <Header />
+      <Header onToggleMenu={() => setMenuOpen((v) => !v)} />
       <main className="d-flex flex-fill mb-5" id="main">
         <div className="container-fluid d-flex">
           <div className="row">
-            {isMenuVisible && <Menu />}
+            {menuOpen && <Menu onClose={() => setMenuOpen(false)} />}
             <div className="col mb-5">
               <Breadcrumb />
               <div

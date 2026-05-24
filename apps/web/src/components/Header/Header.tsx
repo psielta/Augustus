@@ -1,19 +1,14 @@
 import { BrButton } from "@govbr-ds/webcomponents-react";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
-const Header = () => {
-  const [menuOpen, setMenuOpen] = useState(true);
+interface HeaderProps {
+  onToggleMenu: () => void;
+}
+
+const Header = ({ onToggleMenu }: HeaderProps) => {
   const { isAutenticado, usuario, logout } = useAuth();
   const navigate = useNavigate();
-
-  const onToggleMenu = () => {
-    const newValue = !menuOpen;
-    setMenuOpen(newValue);
-    const event = new CustomEvent("toggleMenu", { detail: { open: newValue } });
-    window.dispatchEvent(event);
-  };
 
   const onSair = async () => {
     await logout();
@@ -51,10 +46,8 @@ const Header = () => {
               <button
                 className="br-button small circle"
                 type="button"
-                aria-label="Menu"
+                aria-label="Abrir menu lateral"
                 onClick={onToggleMenu}
-                data-toggle="menu"
-                data-target="#main-navigation"
                 id="navigation"
               >
                 <i className="fas fa-bars" aria-hidden="true"></i>

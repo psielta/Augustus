@@ -126,6 +126,7 @@ export default function RegisterPage() {
                 type="text"
                 value={nome}
                 state={erroNome ? "danger" : undefined}
+                {...({ autocomplete: "name" } as Record<string, string>)}
                 onInput={(e) =>
                   setNome((e.target as HTMLInputElement).value)
                 }
@@ -149,6 +150,7 @@ export default function RegisterPage() {
                 type="email"
                 value={email}
                 state={erroEmail ? "danger" : undefined}
+                {...({ autocomplete: "email" } as Record<string, string>)}
                 onInput={(e) =>
                   setEmail((e.target as HTMLInputElement).value)
                 }
@@ -172,6 +174,7 @@ export default function RegisterPage() {
                 type={mostrarSenha ? "text" : "password"}
                 value={senha}
                 state={erroSenha ? "danger" : undefined}
+                {...({ autocomplete: "new-password" } as Record<string, string>)}
                 onInput={(e) =>
                   setSenha((e.target as HTMLInputElement).value)
                 }
