@@ -1,0 +1,44 @@
+@import '@govbr-ds/core/dist/core.min.css';
+
+.auth-shell {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.auth-shell .auth-card {
+  width: 100%;
+  max-width: 480px;
+}
+
+/*
+ * Mobile drawer: ate 768px, o menu `.br-menu.push` vira overlay flutuante
+ * (em vez de empurrar conteudo para uma coluna de ~108px no viewport
+ * estreito). O backdrop semitransparente fica abaixo do menu e captura
+ * cliques fora para fechar.
+ */
+.menu-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .br-menu.push.active {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    max-width: 80vw;
+    z-index: 1040;
+    overflow-y: auto;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    background: #fff;
+  }
+
+  .menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1030;
+  }
+}
