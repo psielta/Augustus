@@ -39,113 +39,25 @@ interface FooterProps {
 }
 
 const Footer: React.FC<FooterProps> = ({
-  theme = "dark",
+  theme = "light",
   mainLogo = {
-    url: "/img-template-negative.png",
-    description: "Logo do Site",
+    url: "/brand/augustus-symbol.svg",
+    description: "Augustus - Controlador de finanças pessoais",
   },
-  categories = [
-    {
-      label: "Categoria 1",
-      items: [
-        { text: "Qui esse", href: "javascript:void(0)" },
-        {
-          text: "Adipisicing culpa et ad consequat",
-          href: "javascript:void(0)",
-        },
-        {
-          text: "Adipisicing culpa et ad consequat",
-          href: "javascript:void(0)",
-        },
-        { text: "Deserunt", href: "javascript:void(0)" },
-      ],
-    },
-    {
-      label: "Categoria 2",
-      items: [
-        {
-          text: "Adipisicing culpa et ad consequat",
-          href: "javascript:void(0)",
-        },
-        { text: "Est ex deserunt", href: "javascript:void(0)" },
-        { text: "Duis incididunt consectetur", href: "javascript:void(0)" },
-      ],
-    },
-    {
-      label: "Categoria 3",
-      items: [
-        {
-          text: "Adipisicing culpa et ad consequat",
-          href: "javascript:void(0)",
-        },
-        { text: "Qui esse", href: "javascript:void(0)" },
-      ],
-    },
-    {
-      label: "Categoria 4",
-      items: [
-        { text: "Deserunt", href: "javascript:void(0)" },
-        { text: "Ad deserunt nostrud", href: "javascript:void(0)" },
-        { text: "Est ex deserunt", href: "javascript:void(0)" },
-      ],
-    },
-    {
-      label: "Categoria 5",
-      items: [
-        { text: "Duis incididunt consectetur", href: "javascript:void(0)" },
-        { text: "Qui esse", href: "javascript:void(0)" },
-        {
-          text: "Ex qui laborum consectetur aute commodo",
-          href: "javascript:void(0)",
-        },
-        { text: "Est ex deserunt", href: "javascript:void(0)" },
-      ],
-    },
-    {
-      label: "Categoria 6",
-      items: [
-        {
-          text: "Ex qui laborum consectetur aute commodo",
-          href: "javascript:void(0)",
-        },
-        { text: "Duis incididunt consectetur", href: "javascript:void(0)" },
-        { text: "Deserunt", href: "javascript:void(0)" },
-      ],
-    },
-  ],
-  socialLinks = [
-    { icon: "facebook-f", description: "Facebook", href: "javascript:void(0)" },
-    { icon: "twitter", description: "Twitter", href: "javascript:void(0)" },
-    {
-      icon: "linkedin-in",
-      description: "Linkedin",
-      href: "javascript:void(0)",
-    },
-    { icon: "whatsapp", description: "Whatsapp", href: "javascript:void(0)" },
-  ],
-  partnerLogos = [
-    {
-      src: "/img-template-negative.png",
-      description: "Imagem",
-    },
-    {
-      src: "/img-template-negative.png",
-      description: "Imagem",
-    },
-  ],
-  licenseText = "Texto destinado a exibição das informações relacionadas à <strong>licença de uso.</strong>",
+  categories = [],
+  socialLinks = [],
+  partnerLogos = [],
+  licenseText = "Augustus - Controlador de finanças pessoais.",
 }) => {
   return (
     <div className="d-flex flex-wrap justify-content-evenly mt-5">
       <BrFooter theme={theme}>
-        {/* Slot de logo principal */}
         <BrFooterLogo
           slot="logo"
           src={mainLogo.url}
           description={mainLogo.description}
         ></BrFooterLogo>
 
-        {/* Slots de categorias */}
         {categories.map((category, cIdx) => (
           <BrFooterCategory label={category.label} key={cIdx}>
             {category.items.map((item, iIdx) => (
@@ -156,7 +68,6 @@ const Footer: React.FC<FooterProps> = ({
           </BrFooterCategory>
         ))}
 
-        {/* Slot de redes sociais */}
         {socialLinks.map((social, sIdx) => (
           <BrFooterSocial
             slot="social-network"
@@ -167,7 +78,6 @@ const Footer: React.FC<FooterProps> = ({
           ></BrFooterSocial>
         ))}
 
-        {/* Slot de logos de parceiros */}
         {partnerLogos.map((logoObj, pIdx) => (
           <BrFooterLogo
             slot="partner-logo"
@@ -178,10 +88,7 @@ const Footer: React.FC<FooterProps> = ({
           ></BrFooterLogo>
         ))}
 
-        {/* Slot de conteúdo legal */}
-        <BrFooterLegal slot="legal">
-          <div dangerouslySetInnerHTML={{ __html: licenseText }} />
-        </BrFooterLegal>
+        <BrFooterLegal slot="legal">{licenseText}</BrFooterLegal>
       </BrFooter>
     </div>
   );

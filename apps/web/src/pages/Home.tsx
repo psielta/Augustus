@@ -1,37 +1,19 @@
 import React from "react";
-import reactLogo from "../assets/react.svg";
-import styles from "./Home.module.css";
+import { useAuth } from "../hooks/useAuth";
 
 const Home: React.FC = () => {
+  const { isAutenticado, usuario } = useAuth();
+
   return (
     <section>
-      <div className={styles.frameworkLogo}>
-        <img src={reactLogo} alt="React.js Logo" className={styles.reactLogo} />
-      </div>
-
+      <h1>Augustus</h1>
       <p>
-        Este projeto é um quickstart que tem como principal objetivo demonstrar
-        a integração e o uso da biblioteca de Web Components do GovBR-DS em uma
-        aplicação React. Os exemplos de código aqui presentes são focados em
-        fins didáticos, buscando ilustrar de forma clara e simples como utilizar
-        os componentes.
+        Bem-vindo ao Augustus, seu controlador de finanças pessoais.
+        {isAutenticado && usuario && ` Olá, ${usuario.nome}.`}
       </p>
       <p>
-        É importante ressaltar que, por ser um projeto de demonstração, o código
-        pode não abranger todas as melhores práticas de segurança, qualidade,
-        escalabilidade e tratamento de erros necessárias para um ambiente de
-        produção. Caso deseje utilizar este quickstart como base para um projeto
-        real, é fundamental que você revise, adapte e aprimore o código para
-        atender aos requisitos específicos da sua aplicação, garantindo que
-        todos os aspectos de um software robusto sejam considerados.
-      </p>
-      <p>
-        Podem existir pequenas diferenças de comportamento ou implementação
-        entre os diversos quickstarts disponíveis para outras tecnologias (como
-        React, Vue, etc.). Essas variações geralmente decorrem da lógica de
-        aplicação específica de cada framework ou biblioteca, e não de
-        inconsistências nos Web Components do GovBR-DS, que se comportam de
-        maneira padronizada.
+        O dashboard financeiro será incluído em breve. Por enquanto, esta tela
+        serve como ponto de entrada da aplicação.
       </p>
     </section>
   );

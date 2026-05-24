@@ -26,7 +26,10 @@ const Header = () => {
         <div className="header-top">
           <div className="header-logo">
             <a href="/">
-              <img src="/img-template.png" alt="logo" />
+              <img
+                src="/brand/augustus-logo.svg"
+                alt="Augustus - Controlador de finanças pessoais"
+              />
             </a>
             <span className="br-divider vertical"></span>
             <div className="header-sign">
