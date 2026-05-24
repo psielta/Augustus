@@ -102,8 +102,7 @@ export default function RegisterPage() {
     tipoErro && problem ? mensagemAmigavel(tipoErro, problem) : null;
 
   return (
-    <section className="auth-shell">
-      <div className="br-card auth-card">
+    <div className="br-card auth-card">
         <div className="card-header">
           <h1>Criar conta no Augustus</h1>
           <p className="text-base">Controlador de finanças pessoais</p>
@@ -213,7 +212,6 @@ export default function RegisterPage() {
             </div>
           </form>
         </div>
-      </div>
-    </section>
+    </div>
   );
 }

@@ -116,8 +116,7 @@ export default function LoginPage() {
     tipoErro && problem ? mensagemAmigavel(tipoErro, problem) : null;
 
   return (
-    <section className="auth-shell">
-      <div className="br-card auth-card">
+    <div className="br-card auth-card">
         <div className="card-header">
           <h1>Entrar no Augustus</h1>
           <p className="text-base">Controlador de finanças pessoais</p>
@@ -244,7 +243,6 @@ export default function LoginPage() {
             </div>
           </form>
         </div>
-      </div>
-    </section>
+    </div>
   );
 }

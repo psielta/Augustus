@@ -1,21 +1,65 @@
 @import '@govbr-ds/core/dist/core.min.css';
 
-.auth-shell {
+/*
+ * Layout das rotas publicas de autenticacao (/auth/*). Sem header/menu
+ * do admin: uma faixa superior com a marca e um <main> que centraliza
+ * o card.
+ */
+.auth-layout {
+  min-height: 100vh;
   display: flex;
+  flex-direction: column;
+  background: #f8f8f8;
+}
+
+.auth-layout__top {
+  background: #fff;
+  border-bottom: 1px solid #e3e3e3;
+  padding: 1rem 1.5rem;
+}
+
+.auth-layout__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.auth-layout__brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.auth-layout__brand-text strong {
+  color: #1351b4;
+  font-size: 1.05rem;
+}
+
+.auth-layout__brand-text small {
+  color: #555;
+  font-size: 0.8rem;
+}
+
+.auth-layout__main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
   justify-content: center;
   padding: 2rem 1rem;
 }
 
-.auth-shell .auth-card {
+/* Card de auth, usado dentro do AuthLayout */
+.auth-card {
   width: 100%;
   max-width: 480px;
 }
 
 /*
- * Mobile drawer: ate 768px, o menu `.br-menu.push` vira overlay flutuante
- * (em vez de empurrar conteudo para uma coluna de ~108px no viewport
- * estreito). O backdrop semitransparente fica abaixo do menu e captura
- * cliques fora para fechar.
+ * Mobile drawer (admin layout): ate 768px, o menu `.br-menu.push` vira
+ * overlay flutuante em vez de empurrar conteudo. O backdrop captura
+ * cliques fora do drawer e fecha o menu.
  */
 .menu-backdrop {
   display: none;

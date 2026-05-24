@@ -32,8 +32,7 @@ export default function VerifyPendingPage() {
   }
 
   return (
-    <section className="auth-shell">
-      <div className="br-card auth-card">
+    <div className="br-card auth-card">
         <div className="card-header">
           <h1>Verifique seu email</h1>
         </div>
@@ -83,7 +82,6 @@ export default function VerifyPendingPage() {
             </Link>
           </div>
         </div>
-      </div>
-    </section>
+    </div>
   );
 }
