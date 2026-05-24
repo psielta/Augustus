@@ -1,0 +1,12 @@
+.mainContent {
+  padding-left: 1rem;
+  margin-top: 1.5rem;
+}
+
+.hideMenu {
+  display: none;
+}
+
+.showMenu {
+  display: block;
+}

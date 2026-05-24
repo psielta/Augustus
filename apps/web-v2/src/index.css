@@ -1,0 +1,12 @@
+@import '@govbr-ds/core/dist/core.min.css';
+
+.auth-shell {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.auth-shell .auth-card {
+  width: 100%;
+  max-width: 480px;
+}
