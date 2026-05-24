@@ -32,9 +32,7 @@ pages:
     expire_in: 1 week
   script:
     - rm -rf public
-    - npm run build:pages
-    - mkdir -p public
-    - cp -R dist/webcomponents-quickstart-angular/browser/* public/
+    - npm run build
   rules:
     - if: $CI_COMMIT_REF_NAME == "main"
       when: always

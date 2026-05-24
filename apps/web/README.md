@@ -1,12 +1,12 @@
-# Web Components GovBR-DS - Quickstart Angular
+# Web Components GovBR-DS - Quickstart React
 
 ## Descrição
 
-Projeto exemplificando o uso da [biblioteca de Web Components do GovBR-DS](https://gov.br/ds/webcomponents 'Biblioteca de Web Components do GovBR-DS') em projetos [Angular](https://angular.dev/ 'Angular').
+Projeto exemplificando o uso da [biblioteca de Web Components do GovBR-DS](https://gov.br/ds/webcomponents 'Biblioteca de Web Components do GovBR-DS') em projetos [React](https://react.dev/ 'React').
 
 ## Objetivo do Projeto
 
-Este projeto é um quickstart que tem como principal objetivo demonstrar a integração e o uso da biblioteca de Web Components do GovBR-DS em uma aplicação Angular. Os exemplos de código aqui presentes são focados em fins didáticos, buscando ilustrar de forma clara e simples como utilizar os componentes.
+Este projeto é um quickstart que tem como principal objetivo demonstrar a integração e o uso da biblioteca de Web Components do GovBR-DS em uma aplicação React. Os exemplos de código aqui presentes são focados em fins didáticos, buscando ilustrar de forma clara e simples como utilizar os componentes.
 
 É importante ressaltar que, por ser um projeto de demonstração, o código pode não abranger todas as melhores práticas de segurança, qualidade, escalabilidade e tratamento de erros necessárias para um ambiente de produção. Caso deseje utilizar este quickstart como base para um projeto real, é fundamental que você revise, adapte e aprimore o código para atender aos requisitos específicos da sua aplicação, garantindo que todos os aspectos de um software robusto sejam considerados.
 
@@ -17,8 +17,9 @@ Podem existir pequenas diferenças de comportamento ou implementação entre os 
 Esse projeto é desenvolvido usando:
 
 1. [Biblioteca de Web Components do GovBR-DS](https://gov.br/ds/webcomponents 'Biblioteca de Web Components do GovBR-DS')
-1. [Angular](https://angular.dev/ 'Angular').
+1. [React](https://react.dev/ 'React').
 1. [TypeScript](https://www.typescriptlang.org/ 'TypeScript').
+1. [Vite](https://vitejs.dev/ 'Vite').
 
 Para saber mais detalhes sobre Web Components sugerimos que consulte o [MDN](https://developer.mozilla.org/pt-BR/docs/Web/Web_Components 'Web Components | MDN').
 
@@ -39,14 +40,14 @@ As principais dependências do projeto são:
 ## Como executar o projeto?
 
 ```sh
-git clone git@gitlab.com:govbr-ds/bibliotecas/wc/govbr-ds-wc-quickstart-angular.git
+git clone git@gitlab.com:govbr-ds/bibliotecas/wc/govbr-ds-wc-quickstart-react.git
 
 npm install
 
-npm run start
+npm run dev
 ```
 
-Após isso o projeto vai estar disponível no endereço `http://localhost:4200/`.
+Após isso o projeto vai estar disponível no endereço `http://localhost:5173/`.
 
 OBS: Para contribuir com o projeto o clone pode não ser a maneira correta. Por favor consulte nossos guias sobre como contribuir na nossa [wiki](https://gov.br/ds/wiki/ 'Wiki').
 
