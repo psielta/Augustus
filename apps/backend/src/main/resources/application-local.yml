@@ -26,14 +26,14 @@ spring:
     enabled: true
     locations: filesystem:./flyway/sql
   mail:
-    host: ${AUGUSTUS_MAIL_HOST:smtp.gmail.com}
-    port: ${AUGUSTUS_MAIL_PORT:587}
+    host: ${AUGUSTUS_MAIL_HOST:localhost}
+    port: ${AUGUSTUS_MAIL_PORT:1025}
     username: ${AUGUSTUS_MAIL_USERNAME:}
     password: ${AUGUSTUS_MAIL_PASSWORD:}
     properties:
-      mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
-      mail.smtp.starttls.required: true
+      mail.smtp.auth: ${AUGUSTUS_MAIL_SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${AUGUSTUS_MAIL_STARTTLS_ENABLE:false}
+      mail.smtp.starttls.required: ${AUGUSTUS_MAIL_STARTTLS_REQUIRED:false}
   task:
     execution:
       pool:
@@ -131,6 +131,6 @@ auth:
   verificacao:
     base-url: ${AUGUSTUS_VERIFICACAO_URL:http://localhost:8080/api/auth/verify-email}
   mail:
-    from: ${AUGUSTUS_MAIL_FROM:}
+    from: ${AUGUSTUS_MAIL_FROM:noreply@augustus.local}
   resend:
     cooldown: PT1M

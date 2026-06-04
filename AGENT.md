@@ -194,8 +194,10 @@ Segredos e SMTP:
 - Nunca commitar `.env` real.
 - `AUGUSTUS_DB_USERNAME`, `AUGUSTUS_DB_PASSWORD` e `AUGUSTUS_DB_ROOT_PASSWORD` configuram o MySQL local.
 - `AUGUSTUS_JWT_SECRET` e obrigatorio em `local`, com pelo menos 32 caracteres.
-- SMTP Gmail usa `AUGUSTUS_MAIL_HOST`, `AUGUSTUS_MAIL_PORT`, `AUGUSTUS_MAIL_USERNAME`, `AUGUSTUS_MAIL_PASSWORD`, `AUGUSTUS_MAIL_FROM`.
-- `AUGUSTUS_MAIL_PASSWORD` deve ser Gmail App Password de `https://myaccount.google.com/apppasswords`, nao senha normal.
+- Em desenvolvimento, SMTP local usa Mailpit no Docker Compose: SMTP `localhost:1025`, UI `http://localhost:8025`.
+- Mailpit nao usa usuario, senha, autenticacao SMTP nem STARTTLS.
+- Para SMTP real/Gmail, usar `AUGUSTUS_MAIL_HOST`, `AUGUSTUS_MAIL_PORT`, `AUGUSTUS_MAIL_USERNAME`, `AUGUSTUS_MAIL_PASSWORD`, `AUGUSTUS_MAIL_FROM`, `AUGUSTUS_MAIL_SMTP_AUTH=true`, `AUGUSTUS_MAIL_STARTTLS_ENABLE=true` e `AUGUSTUS_MAIL_STARTTLS_REQUIRED=true`.
+- `AUGUSTUS_MAIL_PASSWORD` no Gmail deve ser App Password de `https://myaccount.google.com/apppasswords`, nao senha normal.
 - Nunca logar `AUGUSTUS_MAIL_PASSWORD` nem token de verificacao plain.
 - `EmailService` e a abstracao; nao injetar `JavaMailSender` fora de `SmtpEmailService`.
 - Nunca expor `senha_hash`, `refresh_token_hash`, `token_hash` ou qualquer `*_hash` em DTOs/respostas.

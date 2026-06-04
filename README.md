@@ -138,11 +138,14 @@ Variaveis relevantes:
 
 - `AUGUSTUS_DB_USERNAME`, `AUGUSTUS_DB_PASSWORD` e `AUGUSTUS_DB_ROOT_PASSWORD` configuram o MySQL local.
 - `AUGUSTUS_JWT_SECRET` obrigatoria no profile `local`, com pelo menos 32 caracteres. A aplicacao falha ao iniciar se faltar ou contiver `dev-only`/`trocar-em-producao`.
-- `AUGUSTUS_MAIL_HOST` default `smtp.gmail.com`.
-- `AUGUSTUS_MAIL_PORT` default `587`.
-- `AUGUSTUS_MAIL_USERNAME`.
-- `AUGUSTUS_MAIL_PASSWORD`, que deve ser Gmail App Password, nao a senha normal da conta. A conta precisa de 2FA e a senha deve ser criada em `https://myaccount.google.com/apppasswords`.
-- `AUGUSTUS_MAIL_FROM`.
+- Em desenvolvimento, o Docker Compose sobe Mailpit para capturar emails localmente.
+- Mailpit SMTP: `localhost:1025`.
+- Mailpit UI: `http://localhost:8025`.
+- `AUGUSTUS_MAIL_HOST` default `localhost`.
+- `AUGUSTUS_MAIL_PORT` default `1025`.
+- `AUGUSTUS_MAIL_USERNAME` e `AUGUSTUS_MAIL_PASSWORD` ficam vazios no Mailpit.
+- `AUGUSTUS_MAIL_FROM` default `noreply@augustus.local`.
+- Para usar Gmail no lugar do Mailpit, configurar `AUGUSTUS_MAIL_HOST=smtp.gmail.com`, `AUGUSTUS_MAIL_PORT=587`, `AUGUSTUS_MAIL_SMTP_AUTH=true`, `AUGUSTUS_MAIL_STARTTLS_ENABLE=true`, `AUGUSTUS_MAIL_STARTTLS_REQUIRED=true` e `AUGUSTUS_MAIL_PASSWORD` como Gmail App Password, nao a senha normal da conta.
 - `AUGUSTUS_VERIFICACAO_URL` opcional, default `http://localhost:8080/api/auth/verify-email`. Para o fluxo web em dev, **sobrescrever para `http://localhost:4200/auth/verify-email`** (o frontend React intercepta o `?token=...` e chama o POST do backend, dando UX melhor que o GET text/plain).
 
 Exemplo de setup local:
@@ -150,7 +153,7 @@ Exemplo de setup local:
 ```powershell
 cd apps\backend
 Copy-Item .env.example .env
-# edite .env e preencha AUGUSTUS_JWT_SECRET, SMTP e credenciais do banco se necessario
+# edite .env e preencha AUGUSTUS_JWT_SECRET; SMTP local usa Mailpit por padrao
 docker compose up -d
 .\mvnw.cmd -Dflyway.configFiles=.\flyway\flyway.conf flyway:migrate
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
@@ -254,6 +257,7 @@ Copy-Item .env.example .env
 # AUGUSTUS_DB_PASSWORD=augustus
 # AUGUSTUS_JWT_SECRET=<segredo com pelo menos 32 caracteres>
 # AUGUSTUS_VERIFICACAO_URL=http://localhost:4200/auth/verify-email
+# SMTP local usa Mailpit: localhost:1025, UI http://localhost:8025
 docker compose up -d
 .\mvnw.cmd -Dflyway.configFiles=.\flyway\flyway.conf flyway:migrate
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
@@ -341,9 +345,9 @@ Setup do backend para o fluxo mobile funcionar end-to-end (mesmo `.env` da fatia
 AUGUSTUS_DB_USERNAME=augustus
 AUGUSTUS_DB_PASSWORD=augustus
 AUGUSTUS_JWT_SECRET=...
-AUGUSTUS_MAIL_USERNAME=...
-AUGUSTUS_MAIL_PASSWORD=...
-AUGUSTUS_MAIL_FROM=...
+AUGUSTUS_MAIL_HOST=localhost
+AUGUSTUS_MAIL_PORT=1025
+AUGUSTUS_MAIL_FROM=noreply@augustus.local
 ```
 
 Fluxo end-to-end:

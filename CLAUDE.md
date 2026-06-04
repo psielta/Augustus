@@ -196,8 +196,10 @@ Configuracao local:
 - `apps/backend/.env` e git-ignored e carregado no profile `local` por `spring.config.import`.
 - `AUGUSTUS_DB_USERNAME`, `AUGUSTUS_DB_PASSWORD` e `AUGUSTUS_DB_ROOT_PASSWORD` configuram o MySQL local do compose.
 - `AUGUSTUS_JWT_SECRET` e obrigatorio em `local`, deve ter pelo menos 32 caracteres e nao pode conter `dev-only`/`trocar-em-producao`.
-- SMTP Gmail usa `AUGUSTUS_MAIL_HOST`, `AUGUSTUS_MAIL_PORT`, `AUGUSTUS_MAIL_USERNAME`, `AUGUSTUS_MAIL_PASSWORD`, `AUGUSTUS_MAIL_FROM`.
-- `AUGUSTUS_MAIL_PASSWORD` deve ser Gmail App Password de `https://myaccount.google.com/apppasswords`, com 2FA habilitado.
+- Em desenvolvimento, SMTP local usa Mailpit no Docker Compose: SMTP `localhost:1025`, UI `http://localhost:8025`.
+- Mailpit nao usa usuario, senha, autenticacao SMTP nem STARTTLS.
+- Para SMTP real/Gmail, usar `AUGUSTUS_MAIL_HOST`, `AUGUSTUS_MAIL_PORT`, `AUGUSTUS_MAIL_USERNAME`, `AUGUSTUS_MAIL_PASSWORD`, `AUGUSTUS_MAIL_FROM`, `AUGUSTUS_MAIL_SMTP_AUTH=true`, `AUGUSTUS_MAIL_STARTTLS_ENABLE=true` e `AUGUSTUS_MAIL_STARTTLS_REQUIRED=true`.
+- `AUGUSTUS_MAIL_PASSWORD` no Gmail deve ser Gmail App Password de `https://myaccount.google.com/apppasswords`, com 2FA habilitado.
 - `AUGUSTUS_VERIFICACAO_URL` define a URL base do link de verificacao.
 
 ## Banco e migracoes
@@ -284,7 +286,7 @@ Implementada em `apps/web/src/{types,services,context,hooks,components,pages/aut
 - **Tokens em `localStorage`** via `tokenStorage` (`src/services/tokenStorage.ts`) com chaves `augustus.auth.access`, `augustus.auth.refresh`, `*ExpiraEm`. **Mesmas chaves da fatia Angular anterior** — sessoes existentes continuam validas pos-migracao. **Decisao MVP, divida tecnica registrada**: vulneravel a XSS. Migrar para httpOnly cookie quando o backend suportar Set-Cookie + CSRF. Auditar manualmente qualquer uso futuro de `dangerouslySetInnerHTML`/`eval`/`new Function`.
 - **`vite.config.ts` com `server.port: 4200, strictPort: true` + `server.proxy`** mapeando `/api -> http://localhost:8080`. Sem CORS no backend; producao precisa mover frontend para mesmo dominio ou habilitar CORS.
 - **Link de verificacao por email**: backend usa `AUGUSTUS_VERIFICACAO_URL`. Em dev, **operador deve sobrescrever** para `http://localhost:4200/auth/verify-email`; o frontend tem rota correspondente que extrai `?token=...` e chama `POST /api/auth/verify-email` (JSON, com ProblemDetail em erro — melhor UX que o GET text/plain do backend).
-- **Pre-condicao do backend em dev**: em `apps/backend`, copiar `.env.example` para `.env`, preencher `AUGUSTUS_JWT_SECRET`/SMTP quando necessario, subir MySQL com `docker compose up -d`, aplicar Flyway com `.\mvnw.cmd -Dflyway.configFiles=.\flyway\flyway.conf flyway:migrate` e rodar o profile `local`.
+- **Pre-condicao do backend em dev**: em `apps/backend`, copiar `.env.example` para `.env`, preencher `AUGUSTUS_JWT_SECRET`, subir MySQL e Mailpit com `docker compose up -d`, aplicar Flyway com `.\mvnw.cmd -Dflyway.configFiles=.\flyway\flyway.conf flyway:migrate` e rodar o profile `local`.
 - **Tratamento de `ProblemDetail`**: helpers em `src/types/auth.ts` (`extrairTipoErro` + `mensagemAmigavel`). Slugs reconhecidos: `email-ja-cadastrado`, `email-nao-verificado`, `credenciais-invalidas`, `usuario-bloqueado`, `refresh-token-invalido`, `token-verificacao-invalido`, `nao-autenticado`, `envio-email-falhou`.
 
 ### Nao existe no frontend atual
