@@ -50,7 +50,7 @@ test.describe('Login e redirect seguro', () => {
     await submeterLogin(page);
     await expect(page).toHaveURL('/');
 
-    await page.locator('.header-actions button').click();
+    await page.locator('.header-actions .br-button.secondary').click();
     await expect(page).toHaveURL(/\/auth\/login\?logout=1/);
   });
 
