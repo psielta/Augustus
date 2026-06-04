@@ -74,9 +74,8 @@ public class SecurityConfig {
     /**
      * CORS para os clientes web em dev:
      * <ul>
-     *   <li>{@code http://localhost:4200} — frontend React/Vite (apps/web)</li>
+     *   <li>{@code http://localhost:4200} — frontend Angular (apps/web)</li>
      *   <li>{@code http://localhost:4300} — Flutter Web (apps/mobile rodando via {@code flutter run -d chrome})</li>
-     *   <li>{@code http://localhost:5173} — porta default do Vite (caso alguem rode sem strictPort)</li>
      * </ul>
      *
      * <p>Para producao, mover frontend para mesmo dominio do backend ou
@@ -89,8 +88,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://localhost:4200",
-                "http://localhost:4300",
-                "http://localhost:5173"));
+                "http://localhost:4300"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Location"));
