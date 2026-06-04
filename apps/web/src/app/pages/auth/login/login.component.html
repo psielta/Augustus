@@ -1,0 +1,119 @@
+<div class="br-card auth-card">
+    <div class="card-header">
+      <h1>Entrar no Augustus</h1>
+      <p class="text-base">Controlador de finanças pessoais</p>
+    </div>
+    <div class="card-content">
+      <br-message
+        *ngIf="flashSucesso() as msg"
+        state="success"
+        [message]="msg"
+        class="mb-3"
+      ></br-message>
+
+      <br-message
+        *ngIf="tipoErro() as tipo"
+        state="danger"
+        [message]="mensagemErro()"
+        class="mb-3"
+      ></br-message>
+
+      <form [formGroup]="formulario" (ngSubmit)="onSubmit()" novalidate>
+        <div class="mb-3">
+          <br-input
+            ngDefaultControl
+            formControlName="email"
+            type="email"
+            label="Email"
+            autocomplete="email"
+            [state]="
+              formulario.get('email')!.invalid && formulario.get('email')!.touched
+                ? 'danger'
+                : undefined
+            "
+          ></br-input>
+          <br-message
+            *ngIf="formulario.get('email')!.hasError('required') && formulario.get('email')!.touched"
+            state="danger"
+            is-feedback
+            message="Informe seu email"
+          ></br-message>
+          <br-message
+            *ngIf="formulario.get('email')!.hasError('email') && formulario.get('email')!.touched"
+            state="danger"
+            is-feedback
+            message="Email inválido"
+          ></br-message>
+        </div>
+
+        <div class="mb-3">
+          <br-input
+            ngDefaultControl
+            formControlName="senha"
+            [type]="mostrarSenha ? 'text' : 'password'"
+            label="Senha"
+            autocomplete="current-password"
+            [state]="
+              formulario.get('senha')!.invalid && formulario.get('senha')!.touched
+                ? 'danger'
+                : undefined
+            "
+          >
+            <button
+              slot="suffix"
+              class="br-button"
+              type="button"
+              (click)="mostrarSenha = !mostrarSenha"
+              [attr.aria-label]="mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'"
+            >
+              <i [ngClass]="mostrarSenha ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </br-input>
+          <br-message
+            *ngIf="formulario.get('senha')!.hasError('required') && formulario.get('senha')!.touched"
+            state="danger"
+            is-feedback
+            message="Informe sua senha"
+          ></br-message>
+          <br-message
+            *ngIf="formulario.get('senha')!.hasError('minlength') && formulario.get('senha')!.touched"
+            state="danger"
+            is-feedback
+            message="A senha tem no mínimo 8 caracteres"
+          ></br-message>
+        </div>
+
+        <div *ngIf="tipoErro() === 'EMAIL_NAO_VERIFICADO'" class="mb-3">
+          <br-button
+            type="button"
+            emphasis="secondary"
+            [disabled]="reenvioPendente()"
+            (click)="reenviarVerificacao()"
+          >
+            {{ reenvioPendente() ? 'Reenviando...' : 'Reenviar email de verificação' }}
+          </br-button>
+          <br-message
+            *ngIf="reenvioFeito() && !reenvioErro()"
+            state="info"
+            is-feedback
+            message="Se sua conta existir, enviamos um novo email. Aguarde alguns minutos."
+            class="mt-2"
+          ></br-message>
+          <br-message
+            *ngIf="reenvioErro() as msg"
+            state="danger"
+            is-feedback
+            [message]="msg"
+            class="mt-2"
+          ></br-message>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <br-button type="submit" emphasis="primary" [disabled]="enviando()">
+            {{ enviando() ? 'Entrando...' : 'Entrar' }}
+          </br-button>
+          <a class="br-button" routerLink="/auth/register">Criar conta</a>
+        </div>
+      </form>
+    </div>
+  </div>

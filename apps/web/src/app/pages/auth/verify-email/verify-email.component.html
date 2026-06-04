@@ -1,0 +1,31 @@
+<div class="br-card auth-card">
+    <div class="card-header">
+      <h1>Verificação de email</h1>
+    </div>
+    <div class="card-content">
+      <p *ngIf="status() === 'processando'">Verificando seu email, aguarde...</p>
+
+      <br-message
+        *ngIf="status() === 'sucesso'"
+        state="success"
+        [message]="mensagem()"
+      ></br-message>
+
+      <br-message
+        *ngIf="status() === 'erro'"
+        state="danger"
+        [message]="mensagem()"
+      ></br-message>
+
+      <br-message
+        *ngIf="status() === 'sem-token'"
+        state="warning"
+        message="Nenhum token informado. Abra o link enviado por email."
+      ></br-message>
+
+      <div class="d-flex flex-wrap align-items-center gap-2 mt-3" *ngIf="status() !== 'processando'">
+        <a class="br-button" routerLink="/auth/login">Ir para o login</a>
+        <a class="br-button" routerLink="/auth/verify-pending">Reenviar email</a>
+      </div>
+    </div>
+  </div>

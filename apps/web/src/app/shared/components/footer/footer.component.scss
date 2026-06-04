@@ -1,0 +1,38 @@
+.augustus-footer {
+  background: #071d41;
+  color: #fff;
+  padding: 2rem 1.5rem;
+  margin-top: auto;
+}
+
+.augustus-footer__content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.augustus-footer__brand {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.augustus-footer__title {
+  display: block;
+  font-size: 1.125rem;
+  margin-bottom: 0.25rem;
+}
+
+.augustus-footer__desc {
+  margin: 0;
+  font-size: 0.875rem;
+  opacity: 0.9;
+  max-width: 36rem;
+}
+
+.augustus-footer__legal {
+  font-size: 0.8125rem;
+  opacity: 0.85;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding-top: 1rem;
+}

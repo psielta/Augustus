@@ -2,26 +2,34 @@
   "name": "augustus-web",
   "version": "0.0.0",
   "private": true,
+  "description": "Frontend web do Augustus - Controlador de finanças pessoais (Angular + GovBR-DS).",
+  "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "tsc -b && vite build",
-    "dev": "vite",
-    "preview": "vite preview"
+    "build": "ng build",
+    "ng": "ng",
+    "start": "ng serve"
   },
   "dependencies": {
-    "@govbr-ds/core": "3.6.1",
+    "@angular/animations": "^19.2.7",
+    "@angular/common": "^19.2.7",
+    "@angular/compiler": "^19.2.7",
+    "@angular/core": "^19.2.7",
+    "@angular/forms": "^19.2.7",
+    "@angular/platform-browser": "^19.2.7",
+    "@angular/platform-browser-dynamic": "^19.2.7",
+    "@angular/router": "^19.2.7",
+    "@govbr-ds/core": "^3.6.1",
     "@govbr-ds/webcomponents": "2.0.0-next.41",
-    "@govbr-ds/webcomponents-react": "2.0.0-next.41",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-router-dom": "^6.30.3"
+    "@govbr-ds/webcomponents-angular": "2.0.0-next.41",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.10",
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.2",
-    "@vitejs/plugin-react": "^4.4.1",
-    "typescript": "~5.8.3",
-    "vite": "^6.4.2"
+    "@angular-devkit/build-angular": "^19.2.8",
+    "@angular/cli": "^19.2.8",
+    "@angular/compiler-cli": "^19.2.7",
+    "typescript": "~5.5.2"
   }
 }

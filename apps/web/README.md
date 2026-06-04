@@ -1,69 +1,34 @@
-# apps/web — Augustus (frontend React)
+# Augustus Web
 
 Frontend web do **Augustus - Controlador de finanças pessoais**.
 
-Migrado de Angular para React em 2026-05-24, preservando porta `4200`, chaves `localStorage` (`augustus.auth.*`) e contrato HTTP `/api/auth/*` com o backend.
-
-## Stack
-
-- React 19.1 + React Router 6.22
-- TypeScript 5.8 (strict)
-- Vite 6.3 (`@vitejs/plugin-react`)
-- `@govbr-ds/core` 3.6.x + `@govbr-ds/webcomponents-react` 2.0.0-next.41 (versão pinada exata enquanto pre-release)
+Stack: **Angular 19** + [@govbr-ds/webcomponents-angular](https://www.npmjs.com/package/@govbr-ds/webcomponents-angular) (GovBR-DS), com autenticação integrada ao backend Augustus (`/api/auth/*`).
 
 ## Pré-requisitos
 
-- Node.js 20+ e npm.
-- Backend Augustus rodando em `http://localhost:8080/api` (perfil `local`, com MySQL local via Docker em `localhost:3307`).
-- No `apps/backend/.env`, definir `AUGUSTUS_VERIFICACAO_URL=http://localhost:4200/auth/verify-email` para que o link de verificação enviado por email caia na rota do frontend.
+- Node.js 20+
+- Backend Augustus em `http://localhost:8080/api` (ver `apps/backend`)
 
 ## Comandos
 
-```sh
+```powershell
+cd apps/web
 npm install
-npm run dev       # vite, http://localhost:4200/ (strictPort + proxy /api -> :8080)
-npm run build     # tsc -b && vite build (output em dist/)
-npm run preview   # serve a build de produção localmente
+npm start      # ng serve → http://localhost:4200/ (proxy /api → :8080)
+npm run build  # ng build → dist/
 ```
+
+## Desenvolvimento
+
+- Dev server: `http://localhost:4200/`
+- Proxy: `proxy.conf.json` encaminha `/api` para `http://localhost:8080`
+- Link de verificação de email: configure `AUGUSTUS_VERIFICACAO_URL=http://localhost:4200/auth/verify-email` no `.env` do backend
 
 ## Estrutura
 
-```
-apps/web/
-  index.html
-  vite.config.ts          # server.port=4200 strictPort + proxy /api -> :8080
-  package.json
-  tsconfig.{json,app.json,node.json}
-  src/
-    main.tsx              # <StrictMode><AuthProvider><App /></AuthProvider></StrictMode>
-    App.tsx               # BrowserRouter + Header/Menu/Breadcrumb/Footer + Routes
-    index.css             # @import @govbr-ds/core + .auth-shell
-    assets/               # imagens públicas servidas em /
-      brand/              # logo e símbolo do Augustus
-    components/
-      Header/, Menu/, Footer/, Breadcrumb/
-      RedirectIfAuthenticated.tsx
-    context/AuthContext.tsx
-    hooks/useAuth.ts
-    services/
-      tokenStorage.ts
-      apiClient.ts        # apiFetch + refresh single-flight + lerBody resiliente
-      authService.ts
-    types/auth.ts
-    pages/
-      Home.tsx, Formulario.tsx, Colors.tsx        # demos do quickstart (referência)
-      auth/{Login,Register,VerifyPending,VerifyEmail}Page.tsx
-    data/cores.ts
-```
+- `src/app/core/auth/` — AuthService (signals), guards, interceptor, token-storage
+- `src/app/layouts/` — AppLayout (área admin) e AuthLayout (telas de login)
+- `src/app/pages/` — home, form, colors, auth/*
+- `src/assets/brand/` — logos Augustus
 
-## Convenções
-
-- Function components + hooks; sem class components.
-- Forms: state local com `useState` + validação manual por campo.
-- Toda chamada HTTP usa `apiFetch` (`src/services/apiClient.ts`); nunca `fetch` direto.
-- Toda leitura/escrita de tokens passa por `tokenStorage` (`src/services/tokenStorage.ts`); nunca `localStorage` direto.
-- Toda autenticação passa pelo hook `useAuth()` (`src/hooks/useAuth.ts`).
-- Light mode obrigatório: não introduzir dark mode ou theme switcher.
-- Preferir wrappers de `@govbr-ds/webcomponents-react` (`<BrButton>`, `<BrInput>`, etc.) a tags `<br-*>` diretas.
-
-Para diretrizes detalhadas, consultar `CLAUDE.md` e `AGENT.md` na raiz do monorepo.
+Diretriz visual: **light mode** obrigatório (sem dark mode).

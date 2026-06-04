@@ -1,0 +1,38 @@
+<div class="app-shell">
+  <header class="br-header mb-4" id="header" data-sticky="data-sticky">
+    <app-header
+      [menuVisible]="menuOpen"
+      (menuToggled)="toggleMenu()"
+    ></app-header>
+  </header>
+
+  <main class="main mb-5" id="main">
+    <div class="container-fluid d-flex">
+      <div class="row flex-fill">
+        <ng-container *ngIf="menuOpen">
+          <div
+            class="menu-backdrop"
+            (click)="closeMenu()"
+            aria-hidden="true"
+          ></div>
+          <aside
+            class="br-menu push active"
+            id="main-navigation"
+            style="width: 250px"
+          >
+            <app-menu></app-menu>
+          </aside>
+        </ng-container>
+
+        <section class="col mb-5">
+          <br-breadcrumb [crumbs]="breadcrumbItems" homeUrl="/"></br-breadcrumb>
+          <div class="main-content pl-sm-3 mt-4" id="main-content">
+            <router-outlet></router-outlet>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>
