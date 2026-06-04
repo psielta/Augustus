@@ -25,7 +25,7 @@ Padrao de commits:
 Aplicacoes presentes no snapshot atual:
 
 - `apps/backend` — Aplicacao Java/Spring Boot do Augustus, atualmente focada em autenticacao, usuarios e base do dominio financeiro. Tem Flyway, MySQL, OpenAPI, Actuator e testes de integracao com Testcontainers.
-- `apps/web` — Frontend React 19 inicializado a partir do quickstart oficial GovBR-DS Web Components React (`https://gitlab.com/govbr-ds/bibliotecas/wbc/govbr-ds-wbc-quickstart-react`) e migrado de Angular em 2026-05-24. Ver secao [Frontend Web](#frontend-web-appsweb).
+- `apps/web` — Frontend Angular (restaurado do quickstart GovBR-DS Web Components Angular) com autenticacao integrada. Ver secao [Frontend Web](#frontend-web-appsweb).
 - `apps/mobile` - Aplicativo Flutter clonado do template Flutter Riverpod Clean Architecture (`https://github.com/ssoad/flutter_riverpod_clean_architecture`). Ver secao [Mobile](#mobile-appsmobile).
 
 As pastas `packages/shared` e `docker` continuam vazias ou sem manifests de tecnologia no snapshot atual. O Docker Compose ativo do backend fica em `apps/backend/docker-compose.yml` e sobe MySQL em `localhost:3307`. A pasta `docs` contem documentacao, assets de marca e blueprints de banco, mas nada ali e executado automaticamente pela aplicacao.
@@ -241,145 +241,64 @@ Padroes reais do backend:
 Para o frontend, derive versoes e dependencias destes arquivos:
 
 - `apps/web/package.json`
-- `apps/web/vite.config.ts`
-- `apps/web/tsconfig.json`
-- `apps/web/tsconfig.app.json`
-- `apps/web/tsconfig.node.json`
-- `apps/web/index.html`
-- `apps/web/src/main.tsx`
-- `apps/web/src/App.tsx`
+- `apps/web/angular.json`
+- `apps/web/proxy.conf.json`
+- `apps/web/tsconfig*.json`
+- `apps/web/src/index.html`
+- `apps/web/src/main.ts`
+- `apps/web/src/app/app.{config,routes,component}.ts`
 
 ### Versoes e tecnologias do frontend
 
-- React: 19.1.x (function components + hooks, sem class components)
-- React Router: 6.22.x (`BrowserRouter`)
-- TypeScript: 5.8.x (`strict`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`, `jsx: react-jsx`)
-- Build tool: Vite 6.3.x com `@vitejs/plugin-react` (esbuild + Rollup)
-- Bootstrap: `createRoot(...).render(<AuthProvider><App /></AuthProvider>)` em `src/main.tsx`
-- Roteamento: `<BrowserRouter>` em `App.tsx`, `<Routes>` declarativas (sem lazy loading nesta fatia)
-- Estilos: CSS / CSS Modules; `@govbr-ds/core/dist/core.min.css` importado em `src/index.css`
-- Design system: `@govbr-ds/core` 3.6.x, `@govbr-ds/webcomponents` 2.0.0-next.41 (pinado), `@govbr-ds/webcomponents-react` 2.0.0-next.41 (pinado)
-- Componentes wrapper React: importados de `@govbr-ds/webcomponents-react` (ex.: `BrBreadcrumb`, `BrButton`, `BrInput`, `BrMessage`, `BrFooter*`, `BrCheckbox`, `BrIcon`)
+- Angular: 19.2.x (standalone components + signals)
+- Angular Router: rotas aninhadas + `canActivateChild` / `canMatch`
+- TypeScript: 5.5.x (`strict`)
+- RxJS ~7.8, zone.js ~0.15
+- Build: Angular CLI (`ng serve` / `ng build`)
+- Estilos: SCSS por componente + `styles.scss` global; `@govbr-ds/core` via `angular.json`
+- Design system: `@govbr-ds/webcomponents-angular` 2.0.0-next.41 (pinado, sem `^`)
 
-Externos via CDN em `index.html`:
+### Autenticacao web (v1)
 
-- Fonte Rawline (`cdngovbr-ds.estaleiro.serpro.gov.br`)
-- Fonte Raleway (Google Fonts)
-- Font Awesome 5.15.4 (cdnjs)
-
-Referencia de uso e catalogo de componentes:
-
-- Design system: `https://www.gov.br/ds/home`
-- Storybook dos Web Components: `https://webcomponent-ds.estaleiro.serpro.gov.br/`
-- Pacote npm: `https://www.npmjs.com/package/@govbr-ds/webcomponents-react`
-
-### Autenticacao web (v1 — fatia atual)
-
-Implementada em `apps/web/src/{types,services,context,hooks,components,pages/auth}/`. Consome `/api/auth/*` do backend Augustus via proxy reverso de dev. Migrada de Angular para React preservando paridade comportamental 1:1 (mesmas chaves de localStorage, mesma porta 4200, mesmo backend).
-
-- **HTTP via wrapper `apiFetch<T>`** em `src/services/apiClient.ts` (sem Axios — `fetch` nativo + parsing resiliente de body). `lerBody` retorna `null` em 204, `content-length: 0` ou `content-type` nao-JSON (necessario porque `logout`/`verify-email`/`resend-verification` retornam 204).
-- **Restauracao de sessao no bootstrap**: `AuthProvider` em `src/context/AuthContext.tsx` tem `useEffect` que chama `restaurarSessao()` uma vez no mount (substitui o `provideAppInitializer` do Angular). Faz `POST /api/auth/refresh` + `GET /api/auth/me` se ha refresh em storage.
-- **`AuthContext` + hook `useAuth`** (substituem os Signals do Angular). State imutavel com `useReducer`: `status` (`inicializando`/`anonimo`/`autenticado`), `usuario`, `precisaVerificarEmail`, `emailEmVerificacao`, `isAutenticado` (derivado). Metodos expostos: `registrar`, `login`, `verificarEmailComToken`, `reenviarVerificacao`, `logout`. Services puros em `src/services/authService.ts` chamam `apiFetch` direto.
-- **`apiFetch` faz refresh single-flight em 401** via `let inflightRefresh: Promise<boolean> | null` no module-level (`src/services/apiClient.ts`): chamadas concorrentes a `refreshTokens()` compartilham a Promise. Skip explicito para paths publicos de auth (`/auth/login`, `/auth/register`, `/auth/refresh`, `/auth/verify-email`, `/auth/resend-verification`). Apos sucesso do refresh, retenta a request original com novo Bearer.
-- **Refresh transitorio NAO apaga tokens**: apiClient so chama `tokenStorage.limpar()` em 401 confirmado (slug `refresh-token-invalido`/`nao-autenticado` no `ProblemDetail.type`, ou 401 sem body parseavel). Erros de rede / timeout / 5xx preservam storage.
-- **Wrapper `<RedirectIfAuthenticated>`** (`src/components/RedirectIfAuthenticated.tsx`) substitui o `naoAutenticadoGuard` Angular: envolve `<LoginPage>` e `<RegisterPage>` nas rotas, usa `useAuth()` + `<Navigate to="/" replace />` se autenticado. Respeita `status === 'inicializando'` (nao redireciona durante bootstrap). Rotas legadas (`/`, `/formulario`, `/cores`) permanecem publicas.
-- **Tokens em `localStorage`** via `tokenStorage` (`src/services/tokenStorage.ts`) com chaves `augustus.auth.access`, `augustus.auth.refresh`, `*ExpiraEm`. **Mesmas chaves da fatia Angular anterior** — sessoes existentes continuam validas pos-migracao. **Decisao MVP, divida tecnica registrada**: vulneravel a XSS. Migrar para httpOnly cookie quando o backend suportar Set-Cookie + CSRF. Auditar manualmente qualquer uso futuro de `dangerouslySetInnerHTML`/`eval`/`new Function`.
-- **`vite.config.ts` com `server.port: 4200, strictPort: true` + `server.proxy`** mapeando `/api -> http://localhost:8080`. Sem CORS no backend; producao precisa mover frontend para mesmo dominio ou habilitar CORS.
-- **Link de verificacao por email**: backend usa `AUGUSTUS_VERIFICACAO_URL`. Em dev, **operador deve sobrescrever** para `http://localhost:4200/auth/verify-email`; o frontend tem rota correspondente que extrai `?token=...` e chama `POST /api/auth/verify-email` (JSON, com ProblemDetail em erro — melhor UX que o GET text/plain do backend).
-- **Pre-condicao do backend em dev**: em `apps/backend`, copiar `.env.example` para `.env`, preencher `AUGUSTUS_JWT_SECRET`, subir MySQL e Mailpit com `docker compose up -d`, aplicar Flyway com `.\mvnw.cmd -Dflyway.configFiles=.\flyway\flyway.conf flyway:migrate` e rodar o profile `local`.
-- **Tratamento de `ProblemDetail`**: helpers em `src/types/auth.ts` (`extrairTipoErro` + `mensagemAmigavel`). Slugs reconhecidos: `email-ja-cadastrado`, `email-nao-verificado`, `credenciais-invalidas`, `usuario-bloqueado`, `refresh-token-invalido`, `token-verificacao-invalido`, `nao-autenticado`, `envio-email-falhou`.
-
-### Nao existe no frontend atual
-
-- Gerenciamento de estado fora de auth (Zustand, Redux Toolkit, Jotai)
-- Outro framework de UI (Tailwind, Material UI, PrimeReact, Chakra)
-- Testes unitarios escritos (sem arquivos `*.test.tsx` em `src/`) — Vitest + React Testing Library nao configurados
-- ESLint, Prettier ou Stylelint configurados
-- Arquivos de ambiente (`src/environments/` ou `.env`)
-- i18n / traducoes
-- PWA / Service Worker
-- httpOnly cookie para tokens (decisao MVP usa localStorage)
-- Form library (sem `react-hook-form`/`zod`/`formik` — state nativo + validacao manual, seguindo `Formulario.tsx` do quickstart)
-- HTTP client externo (sem `axios`/`ky` — `fetch` nativo via `apiFetch` wrapper)
-
-Diretriz visual: o frontend web sera sempre light mode. Nao adicionar dark mode, theme switcher ou estilos alternativos de tema escuro.
-
-Versoes GovBR-DS estao **pinadas exatas** em `package.json` (`2.0.0-next.41` sem `^`) para evitar breakage entre pre-releases consecutivos.
+- `HttpClient` + `authInterceptor` (Bearer; skip em rotas publicas de auth)
+- `provideAppInitializer` → `auth.restaurarSessao()` antes do primeiro paint
+- `AuthService` com signals; `authGuard` + `naoAutenticadoGuard`
+- Layouts: `AppLayoutComponent` (area admin protegida) + `AuthLayoutComponent` (auth centralizada)
+- Tokens em `localStorage` via `token-storage.ts` (chaves `augustus.auth.*`)
+- `proxy.conf.json` + porta 4200; sanitizacao de `redirect` pos-login (`destinoSeguroPosLogin`)
+- `AUGUSTUS_VERIFICACAO_URL=http://localhost:4200/auth/verify-email` em dev
 
 ### Comandos do frontend
 
-Executar a partir de `apps/web`.
-
-Windows PowerShell:
-
 ```powershell
+cd apps/web
 npm install
-npm run dev              # vite, http://localhost:4200/ (strictPort, com proxy /api -> :8080)
-npm run build            # tsc -b && vite build (output em dist/)
-npm run preview          # serve a build de producao localmente
+npm start       # ng serve http://localhost:4200/
+npm run build   # ng build → dist/
 ```
-
-Linux/macOS: mesmos comandos `npm`.
 
 ### Runtime do frontend
 
-- Dev server: `http://localhost:4200/` (porta fixada em `vite.config.ts` com `strictPort: true`)
-- Backend: `http://localhost:8080/api` (consumido via proxy `/api`)
+- Dev server: `http://localhost:4200/` (proxy `/api` → `http://localhost:8080`)
+- Backend: `http://localhost:8080/api`
 
 ### Arquitetura existente do frontend
 
-Function components + hooks. Estrutura atual:
-
 ```txt
-apps/web/
-  index.html
-  vite.config.ts          # server.port=4200 strictPort + proxy /api -> :8080
-  package.json
-  tsconfig.{json,app.json,node.json}
-  src/
-    main.tsx              # <StrictMode><AuthProvider><App /></AuthProvider></StrictMode>
-    App.tsx               # BrowserRouter + Header/Menu/Breadcrumb/Footer + Routes
-    index.css             # @import @govbr-ds/core + .auth-shell
-    assets/               # imagens locais
-    components/
-      Header/Header.tsx           # saudacao + botao Sair condicional
-      Menu/Menu.tsx               # link Home/Formulario/Cores
-      Footer/Footer.tsx           # BrFooter* compondo categorias
-      Breadcrumb/Breadcrumb.tsx   # BrBreadcrumb com default "Augustus"
-      RedirectIfAuthenticated.tsx # wrapper para rotas /auth/login e /register
-      index.ts                    # barrel
-    context/AuthContext.tsx       # Provider + useReducer + bootstrap useEffect
-    hooks/useAuth.ts              # consume Context (lanca fora do Provider)
-    services/
-      tokenStorage.ts             # localStorage (augustus.auth.*)
-      apiClient.ts                # apiFetch + refresh single-flight + lerBody resiliente
-      authService.ts              # funcoes puras chamando apiFetch
-    types/auth.ts                 # Usuario, TokenPair, ProblemDetail, extrairTipoErro, mensagemAmigavel
-    pages/
-      Home.tsx, Formulario.tsx, Colors.tsx   # demo do quickstart (preservado como referencia)
-      auth/{Login,Register,VerifyPending,VerifyEmail}Page.tsx
-    data/cores.ts
+apps/web/src/app/
+  app.config.ts, app.routes.ts, app.component.*
+  layouts/{app-layout,auth-layout}/
+  core/auth/
+  shared/components/{header,menu,footer}
+  pages/{home,form,colors,auth/*}
 ```
-
-Padrao predominante:
-
-- Function components + hooks (`useState`, `useReducer`, `useEffect`, `useMemo`, `useSearchParams`, `useNavigate`, `useContext`).
-- Web Components do GovBR-DS consumidos via wrappers `@govbr-ds/webcomponents-react` (ex.: `<BrBreadcrumb>`, `<BrButton>`, `<BrInput>`, `<BrMessage>`) — preferir esses wrappers ao consumir tags `<br-*>` diretamente.
-- Forms: state local com `useState` + validacao manual por campo, igual ao padrao do `Formulario.tsx` do quickstart.
-- `apiFetch` retorna `Resultado<T>` (`{ ok: true, data } | { ok: false, problem }`), nunca lanca em status nao-2xx — caller faz `if (r.ok) ...`.
-- TypeScript em modo estrito (`strict`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`, `jsx: react-jsx`).
-- Children + slots de Web Components: `BrInput` aceita `<BrMessage slot="feedback">` ou `<BrButton>` como children (suffix do eye toggle).
 
 ### Diretrizes para evoluir o frontend
 
-- Preferir componentes do GovBR-DS antes de criar componente custom: consultar o Storybook (`https://webcomponent-ds.estaleiro.serpro.gov.br/`) e o catalogo (`https://www.gov.br/ds/components/visao-geral`).
-- Manter function components com hooks — nao introduzir class components.
-- Toda chamada HTTP ao backend deve usar `apiFetch` (`src/services/apiClient.ts`); nao chamar `fetch` direto em paginas/componentes.
-- Toda autenticacao passa pelo `useAuth()` (`src/hooks/useAuth.ts`); nao ler/gravar `localStorage` direto fora de `tokenStorage`.
-- Antes de adicionar `vitest` + React Testing Library, criar `vitest.config.ts` (ou usar `defineConfig` em `vite.config.ts`) e instalar `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `jsdom` em devDependencies.
-- Logs e erros no console: usar `console.error`/`console.warn` deliberadamente; preferir tratamento de erro em `HttpInterceptor` quando HTTP for adicionado.
-- Arquivos herdados do quickstart que ainda nao foram adaptados ao dominio de financas pessoais (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `LICENSE`, `scripts/gen-components.mjs`) — confirmar com a pessoa usuaria antes de remove-los ou reescreve-los. Ja adaptados/removidos nesta fatia: `apps/web/README.md` (reescrito), `.gitlab-ci.yml` e `release.config.js` (removidos com `@govbr-ds/release-config` — pipeline GitLab/semantic-release nao aplicavel ao GitHub).
-
+- Preferir wrappers `@govbr-ds/webcomponents-angular/standalone`
+- Standalone + signals + Router; sem NgModules nem class components
+- HTTP via `HttpClient` + interceptor; auth via `AuthService`; tokens so em `token-storage.ts`
+- Manter light mode; manter pin `2.0.0-next.41`; manter proxy 4200
 ## Mobile (apps/mobile)
 
 ### Fonte de verdade (mobile)
@@ -555,7 +474,7 @@ Padrao predominante:
 - Preserve o backend original enquanto a migracao de dominio nao for planejada.
 - Ao adicionar funcionalidades de financas pessoais no backend, siga a arquitetura existente: controller, service, repository, model e tratamento central de erro.
 - Use o blueprint em `docs/database/blueprints/2026-05-23-augustus-multiusuario` como mapa de chegada, nao como migration unica a ser aplicada de uma vez.
-- Se introduzir outra stack nova, primeiro adicione manifests/configuracoes reais e depois atualize este arquivo e o `README.md`. O frontend React ja foi adicionado em `apps/web`, o mobile Flutter foi adicionado em `apps/mobile` e o backend usa MySQL via Docker Compose em `apps/backend`.
+- Se introduzir outra stack nova, primeiro adicione manifests/configuracoes reais e depois atualize este arquivo e o `README.md`. O frontend Angular esta em `apps/web`, o mobile Flutter em `apps/mobile` e o backend usa MySQL via Docker Compose em `apps/backend`.
 - Nao declarar tecnologias em documentacao antes de elas existirem no codigo.
 - Ao criar novos modelos no backend, siga o estilo local com Lombok e classes Java, a menos que o projeto decida migrar padrao.
 - Contratos HTTP novos no backend devem ter anotacoes OpenAPI nas interfaces em `api/openapi/controller`.
@@ -567,7 +486,7 @@ Padrao predominante:
 - Nao mencionar PostgreSQL ou H2 como stack atual.
 - Nao tratar Flutter como tecnologia do backend ou do frontend web; Flutter existe apenas em `apps/mobile`.
 - Nao implementar dark mode ou alternancia de tema no frontend web ou no mobile.
-- Nao tratar React ou GovBR-DS como tecnologia do backend — eles existem apenas em `apps/web` e ainda nao ha integracao escrita entre as duas aplicacoes.
+- Nao tratar Angular/GovBR-DS ou React como tecnologia do backend — o frontend web (Angular + GovBR-DS) existe apenas em `apps/web` e a integracao com o backend e via HTTP (`/api/auth/*`).
 - Nao trocar MySQL por outro banco sem alterar configuracao, migracoes, Docker Compose e testes.
 - Nao impor records para DTOs no backend; o projeto atual usa classes com Lombok.
 - Nao expor hashes, tokens plain ou senha SMTP em respostas, logs ou DTOs.
@@ -575,15 +494,16 @@ Padrao predominante:
 - Nao commitar `.env` real; somente `.env.example`.
 - Nao recriar endpoints removidos de tributacao sem decisao explicita de produto.
 - Nao mover o blueprint de banco de `docs/database/blueprints` para Flyway como uma migration unica sem plano incremental.
-- Nao reintroduzir Angular em `apps/web`, nem wrapper `@govbr-ds/webcomponents-angular`, nem dependencias que recriem padroes Angular (`@ngrx/*`, RxJS como state manager) — a stack foi migrada para React em 2026-05-24 e essa direcao deve ser preservada.
-- Nao introduzir class components em `apps/web` — function components + hooks sao o padrao adotado.
-- Nao substituir os Web Components do GovBR-DS por outra biblioteca de UI (Material UI, PrimeReact, Chakra, Tailwind UI, etc.) sem decisao explicita — o design system foi a razao de escolher esse quickstart.
-- Nao remover os links de CDN (Rawline, Raleway, Font Awesome) de `apps/web/index.html` sem prover substituto: o CSS do `@govbr-ds/core` depende desses recursos para renderizar corretamente.
-- Nao desfixar versoes de `@govbr-ds/webcomponents` e `@govbr-ds/webcomponents-react` enquanto estiverem em `-next` — manter pinadas exatas (`2.0.0-next.41` sem `^`) para evitar quebra entre pre-releases.
-- Nao remover `server.proxy` ou `strictPort: true` de `apps/web/vite.config.ts` sem mover frontend para mesmo dominio do backend (quebra a auth e o link de verificacao por email).
-- Em `apps/web`, nao trocar `localStorage` por outra estrategia para `accessToken`/`refreshToken` sem auditar XSS no codigo React (uso de `dangerouslySetInnerHTML`, `eval`, `new Function`).
-- Nao chamar `fetch` direto em paginas/componentes — toda chamada HTTP ao backend deve passar pelo wrapper `apiFetch` em `apps/web/src/services/apiClient.ts`. Nao ler/gravar `localStorage` direto fora de `apps/web/src/services/tokenStorage.ts`.
-- Nao logar `accessToken`/`refreshToken` em `console.log`/`console.warn`/`console.error` no frontend.
+- **Nao reintroduzir React/Vite em `apps/web`**: stack atual e Angular + `@govbr-ds/webcomponents-angular`. Nao adicionar `vite.config.ts`, `.tsx`, React Router, `apiFetch`/`fetch` wrapper, Context `useAuth`, etc.
+- Nao introduzir class components em `apps/web`.
+- Nao substituir GovBR-DS por outra biblioteca visual (Material UI, PrimeReact, Chakra, Tailwind UI) sem decisao explicita.
+- Manter `@govbr-ds/webcomponents-angular` **pinado exato** em `2.0.0-next.41` (sem `^`).
+- Manter `proxy.conf.json` e porta 4200; nao remover proxy sem mover o web para mesmo dominio ou habilitar CORS.
+- Em `apps/web`, toda autenticacao passa pelo `AuthService` injetado (signals); nao ler/gravar `localStorage` fora de `token-storage.ts`.
+- Em `apps/web`, toda chamada HTTP ao backend deve usar `HttpClient` (com `authInterceptor` global); nao usar `fetch` direto.
+- Em `apps/web`, sempre sanitizar o parametro `redirect` pos-login (`destinoSeguroPosLogin` ou equivalente).
+- Nao remover CDNs (Rawline, Raleway, Font Awesome) de `apps/web/src/index.html` sem substituto.
+- Nao logar tokens em console no frontend web.
 - Em `apps/mobile`, nao guardar `accessToken`/`refreshToken` em `shared_preferences`, `Hive` ou cache de memoria persistente — somente `flutter_secure_storage` via `AuthTokenStorage`.
 - `RefreshInterceptor` nao pode depender de `authProvider`, `authRepositoryProvider` ou outro provider de UI/dominio — apenas `AuthTokenStorage` e o `refreshDioProvider` (Dio limpo). Quebrar essa regra cria dependencia circular.
 - Em `apps/mobile`, nao usar `dart:io` em arquivos compartilhados (`AppConstants`, providers genericos) para detectar plataforma; usar `kIsWeb` + `defaultTargetPlatform` de `package:flutter/foundation.dart` para nao quebrar o build Web do template.

@@ -25,7 +25,7 @@ Padrao de commits:
 Aplicacoes presentes no snapshot atual:
 
 - `apps/backend` — API Java/Spring Boot do Augustus, atualmente focada em autenticacao, usuarios e base do dominio financeiro.
-- `apps/web` — Frontend React 19 inicializado a partir do quickstart oficial GovBR-DS Web Components React (https://gitlab.com/govbr-ds/bibliotecas/wbc/govbr-ds-wbc-quickstart-react).
+- `apps/web` — Frontend Angular (GovBR-DS Web Components Angular) com autenticacao integrada ao backend.
 - `apps/mobile` - Aplicativo Flutter clonado do template Flutter Riverpod Clean Architecture (https://github.com/ssoad/flutter_riverpod_clean_architecture).
 
 As pastas `packages/shared` e `docker` continuam como estrutura inicial e ainda nao possuem stack configurada no codigo atual. O MySQL local do backend fica em `apps/backend/docker-compose.yml`. A pasta `docs` contem documentacao, assets de marca e blueprints de banco, mas nada ali e executado automaticamente pela aplicacao.
@@ -146,7 +146,7 @@ Variaveis relevantes:
 - `AUGUSTUS_MAIL_USERNAME` e `AUGUSTUS_MAIL_PASSWORD` ficam vazios no Mailpit.
 - `AUGUSTUS_MAIL_FROM` default `noreply@augustus.local`.
 - Para usar Gmail no lugar do Mailpit, configurar `AUGUSTUS_MAIL_HOST=smtp.gmail.com`, `AUGUSTUS_MAIL_PORT=587`, `AUGUSTUS_MAIL_SMTP_AUTH=true`, `AUGUSTUS_MAIL_STARTTLS_ENABLE=true`, `AUGUSTUS_MAIL_STARTTLS_REQUIRED=true` e `AUGUSTUS_MAIL_PASSWORD` como Gmail App Password, nao a senha normal da conta.
-- `AUGUSTUS_VERIFICACAO_URL` opcional, default `http://localhost:8080/api/auth/verify-email`. Para o fluxo web em dev, **sobrescrever para `http://localhost:4200/auth/verify-email`** (o frontend React intercepta o `?token=...` e chama o POST do backend, dando UX melhor que o GET text/plain).
+- `AUGUSTUS_VERIFICACAO_URL` opcional, default `http://localhost:8080/api/auth/verify-email`. Para o fluxo web em dev, **sobrescrever para `http://localhost:4200/auth/verify-email`** (o frontend Angular intercepta o `?token=...` e chama o POST do backend).
 
 Exemplo de setup local:
 
@@ -207,84 +207,34 @@ Com a aplicacao rodando:
 
 Localizacao: `apps/web`
 
-Projeto React inicializado a partir do quickstart oficial [GovBR-DS Web Components React](https://gitlab.com/govbr-ds/bibliotecas/wbc/govbr-ds-wbc-quickstart-react). Consome o design system [GovBR-DS](https://www.gov.br/ds/home) via biblioteca de [Web Components](https://webcomponent-ds.estaleiro.serpro.gov.br/) atraves dos wrappers React em `@govbr-ds/webcomponents-react`.
+Frontend **Angular 19** com [@govbr-ds/webcomponents-angular](https://www.npmjs.com/package/@govbr-ds/webcomponents-angular), autenticacao via `/api/auth/*` e proxy de desenvolvimento em `proxy.conf.json`.
 
-### Tecnologias usadas no codigo atual
+### Tecnologias
 
-- React 19.1.x (function components + hooks, sem class components)
-- React Router 6.30.x (`BrowserRouter`)
-- TypeScript 5.8.x (`strict`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`)
-- Vite 6.4.x (`@vitejs/plugin-react`, dev server em 4200 com proxy `/api`)
-- Estilos em CSS / CSS Modules (sem SCSS)
-- `@govbr-ds/core` 3.6.x — CSS base do design system (importado em `src/index.css`)
-- `@govbr-ds/webcomponents` 2.0.0-next.41 (pinado) — biblioteca de Web Components
-- `@govbr-ds/webcomponents-react` 2.0.0-next.41 (pinado) — wrappers React (`BrBreadcrumb`, `BrButton`, `BrInput`, `BrMessage`, `BrFooter*`, etc.)
+- Angular 19.2.x (standalone + signals)
+- TypeScript 5.5.x, RxJS 7.8, zone.js
+- GovBR-DS: `@govbr-ds/core`, `@govbr-ds/webcomponents-angular` 2.0.0-next.41 (pinado)
+- Layouts separados: area admin (`AppLayout`) e auth (`AuthLayout`)
+- Guards: `authGuard` (protege rotas internas), `naoAutenticadoGuard` (login/register)
 
-CDNs referenciadas em `index.html`:
+### Autenticacao web
 
-- Fonte Rawline (`cdngovbr-ds.estaleiro.serpro.gov.br`)
-- Fonte Raleway (Google Fonts)
-- Font Awesome 5.15.4 (cdnjs)
-
-Existe: integracao real com `apps/backend` para autenticacao (`/api/auth/*`) via wrapper `apiFetch` baseado em `fetch`, refresh single-flight em 401 com checagem de erro transitorio, Context API + `useReducer` para estado de auth, hook `useAuth()`, restauracao automatica de sessao no bootstrap, wrapper `<RedirectIfAuthenticated>` para rotas publicas de auth.
-
-Ainda nao existe no frontend: gerenciamento de estado fora de auth (Zustand, Redux), testes unitarios (`vitest` + React Testing Library nao configurados), ESLint/Prettier, environments, i18n ou PWA.
-
-Diretriz visual do frontend: a aplicação web será sempre light mode. Não adicionar dark mode, theme switcher ou estilos alternativos de tema escuro.
-
-### Autenticacao web (v1)
-
-Rotas novas em `apps/web/src/pages/auth/`:
-
-- `/auth/login` — formulario email/senha, mostra erros do `ProblemDetail`, oferece reenvio de email quando o backend retorna `EMAIL_NAO_VERIFICADO`.
-- `/auth/register` — formulario nome/email/senha, redireciona para `/auth/verify-pending?email=...` em sucesso.
-- `/auth/verify-pending` — instrucao para abrir o link no email, botao "Reenviar email" (checa `r.ok` antes de mostrar sucesso).
-- `/auth/verify-email?token=...` — callback do link do email. Le o token, chama `POST /api/auth/verify-email`, redireciona para `/auth/login?verificado=1` em sucesso.
-
-Decisoes de seguranca (MVP — registrar como divida tecnica):
-
-- **`accessToken` e `refreshToken` em `localStorage`**. Centralizado em `src/services/tokenStorage.ts` (mesmas chaves `augustus.auth.*` da fatia Angular anterior). Risco aceito: XSS rouba tokens. Migrar para httpOnly cookie quando o backend suportar Set-Cookie + CSRF.
-- **Refresh single-flight em 401**: o wrapper `apiFetch` (`src/services/apiClient.ts`) usa um `inflightRefresh: Promise<boolean> | null` no module-level para garantir 1 refresh por vez mesmo com varios 401 em paralelo. Em erro transitorio (rede, timeout, 5xx) NAO apaga tokens — so limpa storage com slug `refresh-token-invalido`/`nao-autenticado` ou 401 sem body parseavel.
-- **Sem CORS no backend**: dev usa `vite.config.ts` com `server.proxy` mapeando `/api` -> `http://localhost:8080`. Producao precisa mover frontend para o mesmo dominio do backend ou habilitar CORS no `SecurityConfig`.
-
-Setup do backend para o fluxo web funcionar end-to-end (dev):
-
-```powershell
-cd apps\backend
-Copy-Item .env.example .env
-# em apps/backend/.env (gitignored), preencha:
-# AUGUSTUS_DB_USERNAME=augustus
-# AUGUSTUS_DB_PASSWORD=augustus
-# AUGUSTUS_JWT_SECRET=<segredo com pelo menos 32 caracteres>
-# AUGUSTUS_VERIFICACAO_URL=http://localhost:4200/auth/verify-email
-# SMTP local usa Mailpit: localhost:1025, UI http://localhost:8025
-docker compose up -d
-.\mvnw.cmd -Dflyway.configFiles=.\flyway\flyway.conf flyway:migrate
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
-```
-
-O MySQL local deve estar acessivel em `localhost:3307`; essa porta e fixa no compose para evitar conflito com instalacoes locais na porta padrao `3306`.
+Rotas em `/auth/login`, `/auth/register`, `/auth/verify-pending`, `/auth/verify-email`. Tokens em `localStorage` (`augustus.auth.*`). Redirect pos-login sanitizado.
 
 ### Comandos
 
-A partir de `apps/web`:
-
 ```powershell
+cd apps/web
 npm install
-npm run dev              # vite em http://localhost:4200/ com proxy /api -> :8080
-npm run build            # tsc -b && vite build (output em dist/)
-npm run preview          # serve a build em modo producao
+npm start       # http://localhost:4200/ (proxy /api → :8080)
+npm run build
 ```
-
-Linux/macOS: mesmos comandos `npm`.
-
-> Sem suite de testes configurada nesta fatia. Para adicionar `vitest` + React Testing Library, instalar deps e criar `vitest.config.ts` — fora do escopo desta fatia.
 
 ### Runtime
 
-- Dev server: `http://localhost:4200/` (porta fixada com `strictPort: true` em `vite.config.ts`)
-- Backend: `http://localhost:8080/api` (consumido via proxy `/api`)
-
+- Dev: `http://localhost:4200/`
+- Backend: `http://localhost:8080/api`
+- Verificacao de email: `AUGUSTUS_VERIFICACAO_URL=http://localhost:4200/auth/verify-email`
 ## Mobile
 
 Localizacao: `apps/mobile`
@@ -448,31 +398,20 @@ apps/
 
   web/
     package.json
-    vite.config.ts            # server.proxy /api -> :8080, port 4200
+    angular.json
+    proxy.conf.json
     tsconfig.json
     tsconfig.app.json
-    tsconfig.node.json
-    index.html
     src/
-      main.tsx                # <AuthProvider><App /></AuthProvider>
-      App.tsx                 # BrowserRouter + rotas (incluindo /auth/*)
-      index.css               # @import @govbr-ds/core + .auth-shell
-      assets/                 # imagens locais
-      components/
-        Header/, Menu/, Footer/, Breadcrumb/   # shell GovBR-DS
-        RedirectIfAuthenticated.tsx            # wrapper para rotas anonimas
-        index.ts                                # barrel
-      context/AuthContext.tsx                  # Provider + useReducer
-      hooks/useAuth.ts                         # consume Context
-      services/
-        tokenStorage.ts                        # localStorage (chaves augustus.auth.*)
-        apiClient.ts                           # apiFetch + refresh single-flight
-        authService.ts                         # registrar/login/refresh/me/...
-      types/auth.ts                            # Usuario, TokenPair, ProblemDetail, ...
-      pages/
-        Home.tsx, Formulario.tsx, Colors.tsx   # demo do quickstart (preservado)
-        auth/{Login,Register,VerifyPending,VerifyEmail}Page.tsx
-      data/cores.ts
+      main.ts
+      index.html
+      app/
+        app.config.ts, app.routes.ts
+        layouts/{app-layout,auth-layout}/
+        core/auth/
+        shared/components/{header,menu,footer}
+        pages/{home,form,colors,auth/*}
+      assets/brand/
 
   mobile/
     pubspec.yaml

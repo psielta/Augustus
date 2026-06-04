@@ -17,7 +17,7 @@ Diretrizes visuais:
 Aplicacoes atuais:
 
 - `apps/backend`: API Java/Spring Boot do Augustus, atualmente focada em autenticacao, usuarios e base do dominio financeiro.
-- `apps/web`: frontend React 19 inicializado do quickstart GovBR-DS Web Components React (migrado de Angular em 2026-05-24).
+- `apps/web`: frontend Angular (GovBR-DS Web Components Angular) com autenticacao integrada ao backend.
 - `apps/mobile`: app Flutter clonado do template Flutter Riverpod Clean Architecture.
 
 Ainda sem stack propria configurada: `packages/shared` e `docker`. O MySQL local do backend fica em `apps/backend/docker-compose.yml`. A pasta `docs` contem documentacao, assets de marca e blueprints de banco; nada em `docs` e executado automaticamente.
@@ -222,112 +222,29 @@ Ordem recomendada: autenticacao/usuarios; categorias; contas/cartoes/faturas; or
 
 ## Frontend Web
 
-Stack real (migrado de Angular -> React em 2026-05-24):
+Stack real (Angular):
 
-- React 19.1.x
-- React Router 6.22.x (`BrowserRouter`)
-- TypeScript 5.8.x (strict, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`, `jsx: react-jsx`)
-- Vite 6.3.x com `@vitejs/plugin-react` (esbuild + Rollup)
-- CSS / CSS Modules (sem SCSS)
-- GovBR-DS (versoes pinadas, sem `^`):
-  - `@govbr-ds/core` 3.6.x
-  - `@govbr-ds/webcomponents` 2.0.0-next.41
-  - `@govbr-ds/webcomponents-react` 2.0.0-next.41
-- HTTP: `fetch` nativo via wrapper `apiFetch` (sem Axios)
-- State: Context API + `useReducer` + hook `useAuth` (sem Zustand/Redux)
+- Angular 19.2.x (standalone + signals)
+- Angular Router (rotas aninhadas + guards)
+- TypeScript 5.5.x, RxJS 7.8, zone.js
+- SCSS + `@govbr-ds/webcomponents-angular` 2.0.0-next.41 (pinado)
+- HttpClient + `authInterceptor`; `AuthService` com signals
 
 Existe no frontend:
 
-- Autenticacao real consumindo `/api/auth/*` do backend Augustus
-  - Telas: `/auth/login`, `/auth/register`, `/auth/verify-pending`, `/auth/verify-email`
-  - `AuthContext` + hook `useAuth()` (function components + hooks)
-  - `apiFetch` em `src/services/apiClient.ts` com refresh single-flight em 401 (`let inflightRefresh: Promise<boolean> | null` no module-level) e `lerBody` resiliente para 204/empty/non-JSON
-  - Wrapper `<RedirectIfAuthenticated>` em `src/components/RedirectIfAuthenticated.tsx` (substitui o `naoAutenticadoGuard` Angular)
-  - `tokenStorage` encapsulando `localStorage` com chaves `augustus.auth.{access,refresh,accessExpiraEm,refreshExpiraEm}` (decisao MVP — divida tecnica registrada; mesmas chaves da fatia Angular anterior)
-  - `vite.config.ts` com `server.port: 4200`, `strictPort: true`, `server.proxy: { '/api': { target: 'http://localhost:8080' } }`
-  - Restauracao de sessao no bootstrap via `useEffect` no `AuthProvider` (chama `restaurarSessao()` uma vez no mount)
-  - Refresh transitorio NAO apaga tokens — so limpa em 401 confirmado (slug `refresh-token-invalido`/`nao-autenticado` ou 401 sem body)
+- Autenticacao `/api/auth/*`, layouts App/Auth, guards, footer custom Augustus, marca em `assets/brand/`, sanitizacao de redirect, proxy 4200
 
-Ainda nao existe no frontend:
-
-- Gerenciamento de estado fora de auth (Zustand, Redux Toolkit, Jotai)
-- Testes unitarios escritos (sem `*.test.tsx`; Vitest + React Testing Library nao configurados)
-- ESLint/Prettier/Stylelint
-- Arquivos de ambiente (`.env`, `src/environments/`)
-- i18n
-- PWA / Service Worker
-- httpOnly cookie para tokens (atualmente usa localStorage por decisao MVP)
-- Form library (`react-hook-form`, `zod`, `formik`) — usa state nativo + validacao manual
-- HTTP client externo (`axios`, `ky`) — usa `fetch` nativo via `apiFetch`
-
-Diretriz visual: web sempre light mode. Nao adicionar dark mode, theme switcher ou estilos de tema escuro.
-
-Env vars do backend que afetam o frontend em dev:
-
-- `AUGUSTUS_VERIFICACAO_URL` deve ser `http://localhost:4200/auth/verify-email` para o link do email cair na rota do frontend.
-- MySQL local precisa estar de pe por `docker compose up -d` em `apps/backend`, exposto em `localhost:3307`.
-
-Comandos, a partir de `apps/web`:
+Comandos (`apps/web`):
 
 ```powershell
 npm install
-npm run dev              # vite, http://localhost:4200/ (strictPort + proxy /api -> :8080)
-npm run build            # tsc -b && vite build (output em dist/)
-npm run preview          # serve a build de producao localmente
+npm start       # ng serve http://localhost:4200/
+npm run build
 ```
 
-Runtime:
+Runtime: `http://localhost:4200/` + proxy `/api` → `:8080`. `AUGUSTUS_VERIFICACAO_URL=http://localhost:4200/auth/verify-email`.
 
-- Dev server: `http://localhost:4200/` (porta fixada via `strictPort: true`)
-- Backend: `http://localhost:8080/api` (consumido via proxy `/api`)
-
-Estrutura atual:
-
-```txt
-apps/web/
-  index.html
-  vite.config.ts             # server.port=4200 strictPort + proxy /api -> :8080
-  package.json
-  tsconfig.{json,app.json,node.json}
-  src/
-    main.tsx                 # <StrictMode><AuthProvider><App /></AuthProvider></StrictMode>
-    App.tsx                  # BrowserRouter + Header/Menu/Breadcrumb/Footer + Routes
-    index.css                # @import @govbr-ds/core + .auth-shell
-    assets/
-    components/
-      Header/Header.tsx              # saudacao + botao Sair condicional
-      Menu/Menu.tsx                  # Home/Formulario/Cores
-      Footer/Footer.tsx              # BrFooter*
-      Breadcrumb/Breadcrumb.tsx      # BrBreadcrumb default "Augustus"
-      RedirectIfAuthenticated.tsx    # wrapper das rotas /auth/login e /auth/register
-      index.ts                       # barrel
-    context/AuthContext.tsx          # Provider + useReducer + bootstrap useEffect
-    hooks/useAuth.ts                 # consume Context (lanca fora do Provider)
-    services/
-      tokenStorage.ts                # localStorage (augustus.auth.*)
-      apiClient.ts                   # apiFetch + refresh single-flight + lerBody
-      authService.ts                 # funcoes puras chamando apiFetch
-    types/auth.ts                    # Usuario, ProblemDetail, extrairTipoErro, mensagemAmigavel
-    pages/
-      Home.tsx, Formulario.tsx, Colors.tsx           # demo do quickstart
-      auth/{Login,Register,VerifyPending,VerifyEmail}Page.tsx
-    data/cores.ts
-```
-
-Padroes:
-
-- Function components + hooks (`useState`, `useReducer`, `useEffect`, `useMemo`, `useSearchParams`, `useNavigate`, `useContext`); sem class components.
-- Preferir wrappers de `@govbr-ds/webcomponents-react` (`<BrBreadcrumb>`, `<BrButton>`, `<BrInput>`, `<BrMessage>`, etc.) — nao tags `<br-*>` diretas.
-- Forms: state local com `useState` + validacao manual por campo, igual ao `Formulario.tsx` do quickstart.
-- Toda chamada HTTP ao backend usa path relativo `/api/...` via `apiFetch` (passa pelo proxy em dev e e mesma origem em prod); nao chamar `fetch` direto em paginas/componentes.
-- Toda autenticacao passa pelo hook `useAuth()`; nao ler/gravar `localStorage` direto fora de `tokenStorage`.
-- Nao remover `server.proxy` ou `strictPort: true` de `vite.config.ts` sem mover frontend para mesmo dominio do backend ou habilitar CORS no `SecurityConfig`.
-- Nao trocar `localStorage` por outra estrategia (`sessionStorage`/cookie/IndexedDB) sem auditar XSS no codigo (`dangerouslySetInnerHTML`, `eval`, `new Function`).
-- Nao expor `accessToken` ou `refreshToken` em logs ou em `console.log`/`console.warn`/`console.error`.
-- Nao substituir GovBR-DS por Material UI, PrimeReact, Chakra, Tailwind UI ou Bootstrap sem decisao explicita.
-- Nao desfixar (`^`) as versoes `@govbr-ds/webcomponents*` em `2.0.0-next.41` enquanto o pacote estiver em `-next` — risco de breaking change silenciosa.
-- Vitest + React Testing Library nao estao configurados; antes de habilitar testes, criar `vitest.config.ts` (ou `defineConfig` em `vite.config.ts`) e instalar `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `jsdom`.
-
+Padroes: standalone + signals; HTTP via HttpClient; tokens so em `token-storage.ts`; light mode; nao reintroduzir React/Vite.
 ## Mobile
 
 Stack real:
@@ -471,7 +388,7 @@ features/<feature>/
 ## O que nao fazer
 
 - Nao tratar PostgreSQL ou H2 como stack atual.
-- Nao tratar React/GovBR-DS como tecnologia do backend.
+- Nao tratar Angular/GovBR-DS ou React como tecnologia do backend.
 - Nao tratar Flutter como tecnologia do backend ou do frontend web.
 - Nao implementar dark mode ou alternancia de tema no web/mobile.
 - Nao trocar MySQL por outro banco sem alterar configuracao, migracoes, Docker Compose e testes.
@@ -481,15 +398,14 @@ features/<feature>/
 - Nao commitar `.env` real; somente `.env.example`.
 - Nao recriar endpoints removidos de tributacao sem decisao explicita de produto.
 - Nao mover o blueprint de banco de `docs/database/blueprints` para Flyway como uma migration unica sem plano incremental.
-- Nao reintroduzir Angular em `apps/web`, nem wrapper `@govbr-ds/webcomponents-angular`, nem dependencias que recriem padroes Angular (`@ngrx/*`, RxJS como state manager) — a stack foi migrada para React em 2026-05-24.
+- **Nao reintroduzir React/Vite em `apps/web`**: stack e Angular + `webcomponents-angular`. Nao adicionar vite, tsx, apiFetch, useAuth Context, etc.
 - Nao introduzir class components em `apps/web` — function components + hooks sao o padrao.
 - Nao substituir GovBR-DS por outra biblioteca visual (Material UI, PrimeReact, Chakra, Tailwind UI) sem decisao explicita.
 - Nao desfixar (`^`) versoes `@govbr-ds/webcomponents*` enquanto estiverem em pre-release `-next`.
 - Nao remover CDNs de Rawline/Raleway/Font Awesome em `apps/web/index.html` sem substituto.
 - Nao tratar as features Flutter de exemplo (`chat`, `survey`) como dominio final do Augustus. A feature `auth` ja foi substituida por integracao real com o backend.
 - Em `apps/web`, nao remover `server.proxy` ou `strictPort: true` de `vite.config.ts` sem mover frontend para mesmo dominio do backend ou habilitar CORS no `SecurityConfig`.
-- Em `apps/web`, nao trocar `localStorage` por outra estrategia para `accessToken`/`refreshToken` sem auditar XSS no codigo React (uso de `dangerouslySetInnerHTML`, `eval`, `new Function`).
-- Em `apps/web`, nao chamar `fetch` direto em paginas/componentes — toda chamada HTTP ao backend deve passar pelo wrapper `apiFetch` em `src/services/apiClient.ts`. Nao ler/gravar `localStorage` direto fora de `src/services/tokenStorage.ts`.
+- Em `apps/web`, nao chamar `fetch` direto — use HttpClient + interceptor. Nao ler/gravar `localStorage` fora de `token-storage.ts`. Sanitizar redirect pos-login.
 - Em `apps/web` e `apps/mobile`, nao logar `accessToken`, `refreshToken` ou conteudo do `AuthTokenStorage` no console.
 - Em `apps/mobile`, nao guardar `accessToken`/`refreshToken` em `shared_preferences`, `Hive` ou cache em memoria; somente `flutter_secure_storage` via `AuthTokenStorage`.
 - Em `apps/mobile`, o `RefreshInterceptor` nao pode depender de `authProvider`, `authRepositoryProvider` ou qualquer outro provider de UI/dominio — so `AuthTokenStorage` e `refreshDioProvider`.
@@ -503,5 +419,5 @@ features/<feature>/
 
 - Docs: checar com `rg` que termos antigos/inconsistentes nao ficaram.
 - Backend: `.\mvnw.cmd test` ou `.\mvnw.cmd clean package`, conforme escopo.
-- Frontend: `npm run build`; testes (Vitest + React Testing Library) ainda precisam de setup antes de existirem.
+- Frontend: `npm run build` em `apps/web`.
 - Mobile: `flutter analyze` e `flutter test`; usar `build_runner` quando houver codegen.
