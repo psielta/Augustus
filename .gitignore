@@ -39,6 +39,13 @@ dist/
 .angular/
 coverage/
 
+# Artefatos locais (agente, MCP, screenshots, terminais)
+.playwright-mcp/
+agent-tools/
+mcps/
+terminals/
+augustus-*.png
+
 # Flutter / Dart
 .dart_tool/
 .flutter-plugins
