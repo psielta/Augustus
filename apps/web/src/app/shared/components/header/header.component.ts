@@ -7,6 +7,7 @@ import {
   Output,
   inject,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { BrButton } from '@govbr-ds/webcomponents-angular/standalone';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -14,7 +15,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, BrButton],
+  imports: [CommonModule, RouterModule, FormsModule, BrButton],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,9 +26,9 @@ export class HeaderComponent {
   @Input() public headerSign =
     'Augustus - Controlador de finanças pessoais';
   @Input() public headerTitle = 'Augustus';
+  @Input() public headerSubtitle = 'Controlador de finanças pessoais';
   @Input() public searchLabel = 'Texto da pesquisa';
   @Input() public searchPlaceholder = 'O que você procura?';
-  @Input() public menuItems: { label: string; route: string }[] = [];
   @Input() public menuVisible = false;
   @Output() public menuToggled = new EventEmitter<boolean>();
   @Output() public searchSubmitted = new EventEmitter<string>();

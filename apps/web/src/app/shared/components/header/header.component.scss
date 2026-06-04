@@ -3,9 +3,8 @@
   width: 100%;
 }
 
-.header-top {
-  width: 100%;
-  align-items: center;
+.header-greeting {
+  margin-right: 0.5rem;
 }
 
 .header-actions {
@@ -14,8 +13,4 @@
   gap: 0.5rem;
   flex-shrink: 0;
   margin-left: auto;
-}
-
-.header-greeting {
-  margin-right: 0.5rem;
 }

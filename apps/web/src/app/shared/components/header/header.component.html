@@ -7,13 +7,27 @@
         {{ headerSign }}
       </div>
     </div>
-    <div *ngIf="auth.isAutenticado()" class="header-actions">
-      <span class="header-greeting text-base" *ngIf="auth.usuario() as u">
-        Olá, {{ u.nome }}
-      </span>
-      <br-button type="button" emphasis="secondary" (click)="onSair()">
-        Sair
-      </br-button>
+
+    <div class="header-actions">
+      <ng-container *ngIf="auth.isAutenticado()">
+        <span class="header-greeting text-base" *ngIf="auth.usuario() as u">
+          Olá, {{ u.nome }}
+        </span>
+        <br-button type="button" emphasis="secondary" (click)="onSair()">
+          Sair
+        </br-button>
+      </ng-container>
+
+      <div class="header-search-trigger">
+        <button
+          class="br-button circle"
+          type="button"
+          aria-label="Abrir Busca"
+          (click)="openSearch()"
+        >
+          <i class="fas fa-search" aria-hidden="true"></i>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -24,6 +38,9 @@
           class="br-button small circle"
           type="button"
           aria-label="Menu"
+          id="navigation"
+          data-toggle="menu"
+          data-target="#main-navigation"
           [attr.aria-expanded]="menuVisible"
           (click)="toggleMenu()"
         >
@@ -35,7 +52,43 @@
         <div class="header-title">
           {{ headerTitle }}
         </div>
+        <div class="header-subtitle">
+          {{ headerSubtitle }}
+        </div>
       </div>
+    </div>
+
+    <div
+      class="header-search"
+      id="main-searchbox"
+      [class.active]="isSearchOpen"
+    >
+      <div class="br-input has-icon">
+        <label for="augustus-searchbox">{{ searchLabel }}</label>
+        <input
+          id="augustus-searchbox"
+          type="text"
+          [placeholder]="searchPlaceholder"
+          [(ngModel)]="searchQuery"
+          (keydown.enter)="submitSearch()"
+        />
+        <button
+          class="br-button circle small"
+          type="button"
+          aria-label="Pesquisar"
+          (click)="submitSearch()"
+        >
+          <i class="fas fa-search" aria-hidden="true"></i>
+        </button>
+      </div>
+      <button
+        class="br-button circle search-close ml-1"
+        type="button"
+        aria-label="Fechar Busca"
+        (click)="closeSearch()"
+      >
+        <i class="fas fa-times" aria-hidden="true"></i>
+      </button>
     </div>
   </div>
 </div>

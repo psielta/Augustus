@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, Subject, takeUntil } from 'rxjs';
-import { BrBreadcrumb } from '@govbr-ds/webcomponents-angular/standalone';
 import { AuthService } from '../../core/auth/auth.service';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { HeaderComponent } from '../../shared/components/header/header.component';
@@ -11,10 +10,21 @@ import { MenuComponent } from '../../shared/components/menu/menu.component';
 interface BreadcrumbItem {
   label: string;
   url?: string;
-  active?: boolean;
 }
 
 const MENU_STORAGE_KEY = 'augustus.ui.menuOpen';
+
+const ROUTE_BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
+  '/': [{ label: 'Augustus' }],
+  '/formulario': [
+    { label: 'Augustus', url: '/' },
+    { label: 'Formulário' },
+  ],
+  '/cores': [
+    { label: 'Augustus', url: '/' },
+    { label: 'Cores' },
+  ],
+};
 
 @Component({
   selector: 'app-app-layout',
@@ -25,7 +35,6 @@ const MENU_STORAGE_KEY = 'augustus.ui.menuOpen';
     HeaderComponent,
     MenuComponent,
     FooterComponent,
-    BrBreadcrumb,
   ],
   templateUrl: './app-layout.component.html',
   styleUrls: ['./app-layout.component.scss'],
@@ -35,26 +44,26 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
 
-  menuOpen = true;
-  breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Augustus', url: '/', active: true },
-  ];
+  menuOpen = false;
+  breadcrumbItems: BreadcrumbItem[] = [{ label: 'Augustus' }];
 
   ngOnInit(): void {
-    const mobile = window.matchMedia('(max-width: 768px)');
     const stored = localStorage.getItem(MENU_STORAGE_KEY);
     if (stored !== null) {
       this.menuOpen = stored === 'true';
-    } else {
-      this.menuOpen = !mobile.matches;
     }
+
+    this.atualizarBreadcrumb(this.router.url);
 
     this.router.events
       .pipe(
         filter((e) => e instanceof NavigationEnd),
         takeUntil(this.destroy$),
       )
-      .subscribe(() => this.closeMenu());
+      .subscribe((event: NavigationEnd) => {
+        this.atualizarBreadcrumb(event.urlAfterRedirects);
+        this.closeMenuOnNavigate();
+      });
   }
 
   ngOnDestroy(): void {
@@ -68,11 +77,16 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   }
 
   closeMenu(): void {
-    if (!window.matchMedia('(max-width: 768px)').matches) {
-      return;
-    }
     this.menuOpen = false;
     localStorage.setItem(MENU_STORAGE_KEY, 'false');
   }
 
+  private closeMenuOnNavigate(): void {
+    this.closeMenu();
+  }
+
+  private atualizarBreadcrumb(url: string): void {
+    const path = url.split('?')[0];
+    this.breadcrumbItems = ROUTE_BREADCRUMBS[path] ?? [{ label: 'Augustus' }];
+  }
 }

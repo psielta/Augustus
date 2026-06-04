@@ -1,4 +1,19 @@
-<div class="app-shell">
+<div class="template-base app-shell">
+  <nav class="br-skiplink" role="menubar">
+    <a class="br-item" href="#main-content" role="menuitem" accesskey="1">
+      Ir para o conteúdo
+    </a>
+    <a class="br-item" href="#header-navigation" role="menuitem" accesskey="2">
+      Ir para o menu
+    </a>
+    <a class="br-item" href="#main-searchbox" role="menuitem" accesskey="3">
+      Ir para a busca
+    </a>
+    <a class="br-item" href="#footer" role="menuitem" accesskey="4">
+      Ir para o rodapé
+    </a>
+  </nav>
+
   <header class="br-header mb-4" id="header" data-sticky="data-sticky">
     <app-header
       [menuVisible]="menuOpen"
@@ -6,30 +21,51 @@
     ></app-header>
   </header>
 
-  <main class="main mb-5" id="main">
-    <div class="container-fluid d-flex">
-      <div class="row flex-fill">
-        <ng-container *ngIf="menuOpen">
-          <div
-            class="menu-backdrop"
-            (click)="closeMenu()"
-            aria-hidden="true"
-          ></div>
-          <aside
-            class="br-menu push active"
-            id="main-navigation"
-            style="width: 250px"
-          >
-            <app-menu></app-menu>
-          </aside>
-        </ng-container>
+  <main class="d-flex flex-fill mb-5" id="main">
+    <div class="container-lg d-flex">
+      <div class="row">
+        <div
+          class="br-menu"
+          id="main-navigation"
+          data-breakpoints="col-sm-4 col-lg-3"
+          [class.active]="menuOpen"
+          [attr.aria-expanded]="menuOpen"
+        >
+          <app-menu (fecharMenu)="closeMenu()"></app-menu>
+        </div>
 
-        <section class="col mb-5">
-          <br-breadcrumb [crumbs]="breadcrumbItems" homeUrl="/"></br-breadcrumb>
+        <div class="col mb-5">
+          <nav class="br-breadcrumb" aria-label="Breadcrumbs">
+            <ol class="crumb-list" role="list">
+              <li class="crumb home">
+                <a class="br-button circle" routerLink="/">
+                  <span class="sr-only">Página inicial</span>
+                  <i class="fas fa-home" aria-hidden="true"></i>
+                </a>
+              </li>
+              <li
+                *ngFor="let crumb of breadcrumbItems; let last = last"
+                class="crumb"
+                [attr.data-active]="last ? 'active' : null"
+              >
+                <i class="icon fas fa-chevron-right" aria-hidden="true"></i>
+                <a *ngIf="!last && crumb.url" [routerLink]="crumb.url">{{
+                  crumb.label
+                }}</a>
+                <span
+                  *ngIf="last"
+                  tabindex="0"
+                  [attr.aria-current]="'page'"
+                  >{{ crumb.label }}</span
+                >
+              </li>
+            </ol>
+          </nav>
+
           <div class="main-content pl-sm-3 mt-4" id="main-content">
             <router-outlet></router-outlet>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   </main>
