@@ -14,9 +14,20 @@ Stack: **Angular 19** + [@govbr-ds/webcomponents-angular](https://www.npmjs.com/
 ```powershell
 cd apps/web
 npm install
-npm start      # ng serve → http://localhost:4200/ (proxy /api → :8080)
-npm run build  # ng build → dist/
+npm run e2e:install   # primeira vez: baixa o Chromium do Playwright
+npm start             # ng serve → http://localhost:4200/ (proxy /api → :8080)
+npm run build         # ng build → dist/
+npm run e2e           # testes E2E (sobe o dev server e mocka /api/auth)
 ```
+
+## Testes E2E (Playwright)
+
+Os testes em `e2e/` mockam a API `/api/auth/*` (nao exigem backend real). Cobrem:
+
+- Guards (area admin protegida, `naoAutenticadoGuard`)
+- Login, logout e posicionamento do botao Sair
+- Sanitizacao de `redirect` pos-login (open redirect)
+- AuthLayout vs shell admin, footer e marca Augustus
 
 ## Desenvolvimento
 
