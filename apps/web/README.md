@@ -14,7 +14,7 @@ Migrado de Angular para React em 2026-05-24, preservando porta `4200`, chaves `l
 ## Pré-requisitos
 
 - Node.js 20+ e npm.
-- Backend Augustus rodando em `http://localhost:8080/api` (perfil `offline`, com `spring.datasource.url` apontando para um banco gravável — ex.: `calculadora-nonpro.db`).
+- Backend Augustus rodando em `http://localhost:8080/api` (perfil `local`, com MySQL local via Docker em `localhost:3307`).
 - No `apps/backend/.env`, definir `AUGUSTUS_VERIFICACAO_URL=http://localhost:4200/auth/verify-email` para que o link de verificação enviado por email caia na rota do frontend.
 
 ## Comandos
