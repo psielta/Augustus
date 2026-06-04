@@ -1,38 +1,57 @@
 .augustus-footer {
   background: #071d41;
   color: #fff;
-  padding: 2rem 1.5rem;
   margin-top: auto;
 }
 
+.augustus-footer .container-lg {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
 .augustus-footer__content {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .augustus-footer__brand {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.augustus-footer__logo {
+  width: 2rem;
+  height: 2rem;
+  max-width: 2rem;
+  max-height: 2rem;
 }
 
 .augustus-footer__title {
   display: block;
-  font-size: 1.125rem;
-  margin-bottom: 0.25rem;
+  font-size: 0.9375rem;
+  margin-bottom: 0.125rem;
 }
 
 .augustus-footer__desc {
-  margin: 0;
-  font-size: 0.875rem;
+  margin: 0 auto;
+  font-size: 0.75rem;
+  line-height: 1.4;
   opacity: 0.9;
-  max-width: 36rem;
+  max-width: 32rem;
 }
 
 .augustus-footer__legal {
-  font-size: 0.8125rem;
+  width: 100%;
+  font-size: 0.6875rem;
+  line-height: 1.35;
   opacity: 0.85;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
-  padding-top: 1rem;
+  padding-top: 0.75rem;
+  text-align: center;
 }
