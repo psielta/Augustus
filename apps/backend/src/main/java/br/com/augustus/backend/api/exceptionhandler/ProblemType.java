@@ -8,6 +8,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import br.com.augustus.backend.api.util.HttpUtils;
 import br.com.augustus.backend.domain.service.exception.CampoInvalidoException;
 import br.com.augustus.backend.domain.service.exception.CaptchaException;
+import br.com.augustus.backend.domain.service.exception.CategoriaInvalidaException;
+import br.com.augustus.backend.domain.service.exception.CategoriaJaExisteException;
+import br.com.augustus.backend.domain.service.exception.CategoriaNaoEncontradaException;
 import br.com.augustus.backend.domain.service.exception.CredenciaisInvalidasException;
 import br.com.augustus.backend.domain.service.exception.EmailJaCadastradoException;
 import br.com.augustus.backend.domain.service.exception.EmailNaoVerificadoException;
@@ -29,6 +32,12 @@ public enum ProblemType {
 
     CAMPO_INVALIDO(CampoInvalidoException.class,
             "Campo inválido", "campo-invalido"),
+
+    CATEGORIA_NAO_ENCONTRADA(CategoriaNaoEncontradaException.class, "Categoria nao encontrada", "categoria-nao-encontrada"),
+
+    CATEGORIA_JA_EXISTE(CategoriaJaExisteException.class, "Categoria ja existe", "categoria-ja-existe"),
+
+    CATEGORIA_INVALIDA(CategoriaInvalidaException.class, "Categoria invalida", "categoria-invalida"),
 
     EMAIL_JA_CADASTRADO(EmailJaCadastradoException.class, "Email ja cadastrado", "email-ja-cadastrado"),
 

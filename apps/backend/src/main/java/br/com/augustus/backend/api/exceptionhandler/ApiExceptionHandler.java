@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import br.com.augustus.backend.domain.service.exception.CampoInvalidoException;
 import br.com.augustus.backend.domain.service.exception.CaptchaException;
+import br.com.augustus.backend.domain.service.exception.CategoriaJaExisteException;
 import br.com.augustus.backend.domain.service.exception.CredenciaisInvalidasException;
 import br.com.augustus.backend.domain.service.exception.EmailJaCadastradoException;
 import br.com.augustus.backend.domain.service.exception.EmailNaoVerificadoException;
@@ -106,6 +107,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(EmailJaCadastradoException.class)
     public ResponseEntity<Object> handleEmailJaCadastradoException(EmailJaCadastradoException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.CONFLICT;
+        ProblemDetail problemDetail = createProblem(ex, status);
+        return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(CategoriaJaExisteException.class)
+    public ResponseEntity<Object> handleCategoriaJaExisteException(CategoriaJaExisteException ex, WebRequest request) {
         HttpStatus status = HttpStatus.CONFLICT;
         ProblemDetail problemDetail = createProblem(ex, status);
         return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);
