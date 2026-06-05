@@ -1,0 +1,104 @@
+<div class="categorias-form-page">
+  <header>
+    <h1>{{ titulo() }}</h1>
+  </header>
+
+  @if (carregando()) {
+    <p>Carregando...</p>
+  } @else {
+    @if (erro()) {
+      <br-message state="danger" [message]="mensagemErro()" show-icon></br-message>
+    }
+
+    <form [formGroup]="formulario" (ngSubmit)="enviar()" class="categorias-form">
+      <div class="field">
+        <br-input
+          id="nome"
+          ngDefaultControl
+          formControlName="nome"
+          label="Nome *"
+          placeholder="Ex.: Alimentação"
+        ></br-input>
+      </div>
+
+      <div class="field">
+        <label for="tipo">Tipo *</label>
+        <select id="tipo" formControlName="tipo" class="field-select">
+          <option value="DESPESA">Despesa</option>
+          <option value="RECEITA">Receita</option>
+          <option value="PAGAMENTO_CARTAO">Pagamento de cartão</option>
+          <option value="TRANSFERENCIA">Transferência</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="categoriaPaiId">Categoria pai</label>
+        <select id="categoriaPaiId" formControlName="categoriaPaiId" class="field-select">
+          <option value="">Nenhuma (nível superior)</option>
+          @for (pai of paisDisponiveis(); track pai.id) {
+            <option [value]="pai.id">{{ pai.nome }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field field-cor">
+        <div class="field-cor__inputs">
+          <br-input
+            id="corHex"
+            ngDefaultControl
+            formControlName="corHex"
+            label="Cor"
+            placeholder="#CC0000"
+            (blur)="sincronizarPickerDoInput()"
+          ></br-input>
+          <input
+            type="color"
+            [value]="corPicker()"
+            (input)="sincronizarCorDoPicker($any($event.target).value)"
+            aria-label="Seletor de cor"
+          />
+        </div>
+      </div>
+
+      <div class="field">
+        <br-input
+          id="icone"
+          ngDefaultControl
+          formControlName="icone"
+          label="Ícone (classe CSS)"
+          placeholder="fas fa-tags"
+        ></br-input>
+      </div>
+
+      <div class="field">
+        <br-input
+          id="ordem"
+          ngDefaultControl
+          type="number"
+          formControlName="ordem"
+          label="Ordem"
+          min="0"
+        ></br-input>
+      </div>
+
+      <div class="field field-ativo">
+        <br-checkbox
+          ngDefaultControl
+          formControlName="ativo"
+          label="Ativa"
+        ></br-checkbox>
+      </div>
+
+      <div class="categorias-form__acoes">
+        <button
+          class="br-button primary"
+          type="submit"
+          [disabled]="enviando()"
+        >
+          {{ enviando() ? 'Salvando...' : 'Salvar' }}
+        </button>
+        <a class="br-button secondary" routerLink="/categorias">Cancelar</a>
+      </div>
+    </form>
+  }
+</div>

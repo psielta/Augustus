@@ -24,6 +24,15 @@ const ROUTE_BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
     { label: 'Augustus', url: '/' },
     { label: 'Cores' },
   ],
+  '/categorias': [
+    { label: 'Augustus', url: '/' },
+    { label: 'Categorias' },
+  ],
+  '/categorias/nova': [
+    { label: 'Augustus', url: '/' },
+    { label: 'Categorias', url: '/categorias' },
+    { label: 'Nova' },
+  ],
 };
 
 @Component({
@@ -87,6 +96,14 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
 
   private atualizarBreadcrumb(url: string): void {
     const path = url.split('?')[0];
+    if (path.startsWith('/categorias/') && path.endsWith('/editar')) {
+      this.breadcrumbItems = [
+        { label: 'Augustus', url: '/' },
+        { label: 'Categorias', url: '/categorias' },
+        { label: 'Editar' },
+      ];
+      return;
+    }
     this.breadcrumbItems = ROUTE_BREADCRUMBS[path] ?? [{ label: 'Augustus' }];
   }
 }

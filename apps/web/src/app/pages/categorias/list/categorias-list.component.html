@@ -1,0 +1,105 @@
+<div class="categorias-page">
+  <header class="categorias-page__header">
+    <h1>Categorias</h1>
+    <div class="categorias-page__acoes">
+      <br-button emphasis="primary" routerLink="/categorias/nova">
+        Nova categoria
+      </br-button>
+      <br-button
+        emphasis="secondary"
+        [disabled]="semeando()"
+        (click)="semearPadrao()"
+      >
+        {{ semeando() ? 'Criando...' : 'Criar categorias padrão' }}
+      </br-button>
+    </div>
+  </header>
+
+  @if (sucesso()) {
+    <br-message state="success" [message]="sucesso()!" show-icon></br-message>
+  }
+
+  @if (erro()) {
+    <br-message
+      state="danger"
+      [message]="erro()!.detail || erro()!.title || 'Erro ao processar.'"
+      show-icon
+    ></br-message>
+  }
+
+  @if (carregando()) {
+    <p class="categorias-page__status">Carregando categorias...</p>
+  } @else if (categorias().length === 0) {
+    <br-message
+      state="info"
+      message="Nenhuma categoria cadastrada. Crie uma nova ou use as categorias padrão."
+      show-icon
+    ></br-message>
+  } @else {
+    <div class="br-table">
+      <div class="responsive">
+        <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Tipo</th>
+            <th>Cor</th>
+            <th>Ícone</th>
+            <th>Ordem</th>
+            <th>Ativo</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of categoriasExibicao(); track item.categoria.id) {
+            <tr>
+              <td [class.categorias-indent]="item.indent">
+                {{ item.categoria.nome }}
+              </td>
+              <td>{{ rotuloTipo(item.categoria.tipo) }}</td>
+              <td>
+                <span
+                  class="cor-amostra"
+                  [style.background]="corExibicao(item.categoria.corHex)"
+                ></span>
+              </td>
+              <td>
+                @if (item.categoria.icone) {
+                  <i [class]="item.categoria.icone" aria-hidden="true"></i>
+                }
+              </td>
+              <td>{{ item.categoria.ordem }}</td>
+              <td>{{ item.categoria.ativo ? 'Sim' : 'Não' }}</td>
+              <td class="categorias-acoes">
+                <a routerLink="/categorias/{{ item.categoria.id }}/editar">Editar</a>
+                @if (confirmandoId() === item.categoria.id) {
+                  <span class="confirmar-excluir">
+                    <span>Confirmar?</span>
+                    <br-button
+                      emphasis="primary"
+                      [disabled]="excluindo()"
+                      (click)="confirmarExclusao(item.categoria.id)"
+                    >
+                      Sim
+                    </br-button>
+                    <br-button emphasis="secondary" (click)="cancelarExclusao()">
+                      Não
+                    </br-button>
+                  </span>
+                } @else {
+                  <br-button
+                    emphasis="secondary"
+                    (click)="iniciarExclusao(item.categoria.id)"
+                  >
+                    Excluir
+                  </br-button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

@@ -55,6 +55,27 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/colors/colors.component').then((m) => m.ColorsComponent),
       },
+      {
+        path: 'categorias',
+        loadComponent: () =>
+          import('./pages/categorias/list/categorias-list.component').then(
+            (m) => m.CategoriasListComponent,
+          ),
+      },
+      {
+        path: 'categorias/nova',
+        loadComponent: () =>
+          import('./pages/categorias/form/categorias-form.component').then(
+            (m) => m.CategoriasFormComponent,
+          ),
+      },
+      {
+        path: 'categorias/:id/editar',
+        loadComponent: () =>
+          import('./pages/categorias/form/categorias-form.component').then(
+            (m) => m.CategoriasFormComponent,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

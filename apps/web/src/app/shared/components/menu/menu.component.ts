@@ -52,6 +52,12 @@ export class MenuComponent implements OnInit, OnDestroy {
       icon: 'fas fa-palette',
       url: '/cores',
     },
+    {
+      id: 'categorias',
+      name: 'Categorias',
+      icon: 'fas fa-tags',
+      url: '/categorias',
+    },
   ];
 
   setActiveItemFromRoute(url: string): void {
@@ -60,7 +66,13 @@ export class MenuComponent implements OnInit, OnDestroy {
       '/': 'home',
       '/formulario': 'form',
       '/cores': 'cores',
+      '/categorias': 'categorias',
     };
+
+    if (cleanUrl.startsWith('/categorias')) {
+      this.itemAtivo = 'categorias';
+      return;
+    }
 
     this.itemAtivo = routeToIdMap[cleanUrl] ?? null;
   }
